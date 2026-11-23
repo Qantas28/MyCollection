@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>MyCollection V3 — Gestionnaire de Collections Culturelles</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,700;1,400&family=Oswald:wght@600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    /* =====================================================================
+       DESIGN TOKENS & TYPOGRAPHY
+       ===================================================================== */
+    :root {
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-serif: 'Lora', Georgia, serif;
+      --font-display: 'Oswald', sans-serif;
+      --font-comic: 'Space Grotesk', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    /* 1. ACCUEIL / STATS / HASARD : Épuré */
+    body.theme-clean {
+      background-color: #F8FAFC;
+      color: #0F172A;
+    }
+
+    /* 2. FILMS : Esthétique Blockbuster (#0b1e5b à #102a7a & #facc15) */
+    body.theme-films {
+      background-color: #0b1e5b;
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(250, 204, 21, 0.16) 0%, transparent 42%),
+        linear-gradient(180deg, #0b1e5b 0%, #102a7a 55%, #071440 100%);
+      color: #F8FAFC;
+    }
+
+    .font-blockbuster {
+      font-family: var(--font-display);
+      letter-spacing: 0.04em;
+    }
+
+    /* Liseré métallique argent & doré autour des fiches/cartes Steelbook (sans texte) */
+    .steelbook-border {
+      border: 2px solid #facc15;
+      box-shadow:
+        0 0 0 2px #e2e8f0,
+        0 0 0 4px #b4860b,
+        0 14px 28px -6px rgba(0, 0, 0, 0.65);
+    }
+
+    /* 3. SÉRIES : Télé Rétro */
+    body.theme-series {
+      background-color: #1f1916;
+      background-image: radial-gradient(circle at 50% 0%, #2a211c 0%, #171210 100%);
+      color: #F5EFE6;
+    }
+
+    .tv-bezel {
+      border-radius: 1.25rem;
+      border: 3px solid #6E5B4B;
+      box-shadow:
+        inset 0 0 18px rgba(0, 0, 0, 0.55),
+        0 10px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .tv-scanlines {
+      background-image: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.16) 0px,
+        rgba(0, 0, 0, 0.16) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    }
+
+    /* 4. LIVRES : Bibliothèque */
+    body.theme-livres {
+      background-color: #f6f1e7;
+      background-image: linear-gradient(180deg, #faf6ee 0%, #efe7d6 100%);
+      color: #261C15;
+    }
+
+    .font-library {
+      font-family: var(--font-serif);
+    }
+
+    /* 5. BD : Ligne Claire / Tintin */
+    body.theme-bd {
+      background-color: #fafaf7;
+      background-image: radial-gradient(#d4d4d8 1px, transparent 1px);
+      background-size: 18px 18px;
+      color: #18181b;
+    }
+
+    .font-comic {
+      font-family: var(--font-comic);
+    }
+
+    .ligne-claire-card {
+      border: 2px solid #18181b;
+      box-shadow: 4px 4px 0px #18181b;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .ligne-claire-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #18181b;
+    }
+
+    @keyframes pulseSlot {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-slot {
+      animation: pulseSlot 0.25s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="theme-clean min-h-screen flex flex-col">
+
+  <!-- BARRE SUPÉRIEURE (masquée sur l'écran d'accueil) -->
+  <header id="app-header" class="hidden sticky top-0 z-30 transition-colors duration-200 backdrop-blur-md border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <!-- Retour Accueil + Titre univers actif -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <button type="button" onclick="switchTab('accueil')" title="Retour à l'accueil" class="flex items-center gap-2 text-left focus:outline-none group shrink-0">
+          <div id="logo-icon" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="7" height="16" rx="1.5"></rect>
+              <rect x="14" y="4" width="7" height="10" rx="1.5"></rect>
+              <line x1="14" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <span id="logo-text" class="hidden sm:inline text-lg font-bold tracking-tight">MyCollection</span>
+        </button>
+        <span id="header-active-title" class="text-sm sm:text-base font-extrabold truncate px-2.5 py-1 rounded-xl"></span>
+      </div>
+
+      <!-- Actions : TMDB (Films/Séries), Scan, JSON, + Ajouter -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button type="button" onclick="openTmdbModal()" id="btn-tmdb" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5">
+          <span>🎬</span>
+          <span>TMDB</span>
+        </button>
+        <button type="button" onclick="openBarcodeModal()" id="btn-barcode" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5">
+          <span>📷</span>
+          <span class="hidden sm:inline">Scan</span>
+        </button>
+        <button type="button" onclick="openDataModal()" id="btn-backup" title="Export / Import JSON" class="p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5">
+          <span>💾</span>
+          <span class="hidden md:inline">JSON</span>
+        </button>
+        <button type="button" onclick="openFormModal()" id="btn-add-global" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-1 active:scale-95">
+          <span>+</span>
+          <span>Ajouter</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main id="main-container" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-24"></main>
+
+  <!-- BARRE DE NAVIGATION BASSE (masquée sur Accueil, visible ailleurs) -->
+  <nav id="bottom-nav" class="hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-lg px-2 py-1.5 justify-around items-center"></nav>
+
+  <!-- =====================================================================
+       MODALE D'AJOUT / ÉDITION (AVEC SUGGESTIONS TMDB EN DIRECT)
+       ===================================================================== -->
+  <div id="form-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden my-auto border border-slate-200">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <h3 id="form-modal-title" class="text-lg font-bold text-slate-900">Ajouter à la collection</h3>
+        <button type="button" onclick="closeFormModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/70">✕</button>
+      </div>
+
+      <form id="item-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4 max-h-[84vh] overflow-y-auto">
+        <input type="hidden" id="field-id" />
+
+        <!-- Choix de l'univers -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Univers</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" data-cat="films" onclick="setFormCategory('films')" class="cat-btn py-2 px-2 rounded-xl border text-xs font-bold transition">🎬 Films</button>
+            <button type="button" data-cat="series" onclick="setFormCategory('series')" class="cat-btn py-2 px-2 rounded-xl border text-xs font-bold transition">📺 Séries</button>
+            <button type="button" data-cat="bd" onclick="setFormCategory('bd')" class="cat-btn py-2 px-2 rounded-xl border text-xs font-bold transition">💬 BD</button>
+            <button type="button" data-cat="livres" onclick="setFormCategory('livres')" class="cat-btn py-2 px-2 rounded-xl border text-xs font-bold transition">📚 Livres</button>
+          </div>
+          <input type="hidden" id="field-category" value="films" />
+        </div>
+
+        <!-- BLOC INTÉGRÉ : SUGGESTIONS TMDB EN DIRECT DÈS LA FRAPPE (Films & Séries) -->
+        <div id="form-tmdb-section" class="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-blue-950">🎬 Recherche TMDB en direct</span>
+            <span id="form-tmdb-key-status" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">Clé non enregistrée</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-semibold text-blue-950 mb-1">Clé API TMDB (enregistrée automatiquement)</label>
+              <div class="flex gap-1.5">
+                <input type="password" id="form-tmdb-api-key" oninput="syncTmdbApiKey(this.value)" placeholder="Clé API TMDB..." class="flex-1 px-3 py-2 rounded-xl border border-blue-300 bg-white text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                <button type="button" onclick="saveTmdbKeyFromForm()" class="px-2.5 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-[11px] font-bold shrink-0">Sauver</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-blue-950 mb-1">Année (optionnel)</label>
+              <input type="number" id="form-tmdb-year" oninput="onFormTmdbInputChange()" min="1880" max="2035" placeholder="Ex: 2024" class="w-full px-3 py-2 rounded-xl border border-blue-300 bg-white text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-blue-950 mb-1">Tapez au moins 2 lettres pour voir les suggestions</label>
+            <input type="text" id="form-tmdb-query" oninput="onFormTmdbInputChange()" onkeydown="if(event.key==='Enter'){event.preventDefault();runFormTmdbSearch(true);}" placeholder="Commencez à taper un titre (ex: Dune, Oppenheimer)..." class="w-full px-3 py-2 rounded-xl border border-blue-300 bg-white text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+
+          <div id="form-tmdb-suggestions-wrap" class="hidden space-y-2">
+            <p id="form-tmdb-feedback" class="text-[11px] font-semibold text-blue-900"></p>
+            <div id="form-tmdb-suggestions" class="max-h-60 overflow-y-auto space-y-1.5 pr-0.5"></div>
+          </div>
+        </div>
+
+        <!-- Titre & Année -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Titre *</label>
+            <input type="text" id="field-title" required placeholder="Ex: Le Labyrinthe de Pan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Année *</label>
+            <input type="number" id="field-year" required min="1880" max="2035" value="2024" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <!-- Créateur & Acteurs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label id="label-creator" class="block text-xs font-semibold text-slate-700 mb-1">Réalisateur *</label>
+            <input type="text" id="field-creator" required placeholder="Ex: Guillermo del Toro" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div id="wrap-actors">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Casting (séparé par virgule)</label>
+            <input type="text" id="field-actors" placeholder="Ex: Ivana Baquero, Sergi López" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <!-- Genres & Durée / Épisodes / Pages -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Genres (séparés par virgule)</label>
+            <input type="text" id="field-genres" placeholder="Ex: Fantastique, Drame" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label id="label-metric" class="block text-xs font-semibold text-slate-700 mb-1">Durée (minutes)</label>
+            <input type="number" id="field-metric" min="1" value="120" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <!-- Saga & Ordre -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Saga / Série / Cycle (optionnel)</label>
+            <input type="text" id="field-saga" list="saga-datalist" placeholder="Ex: Dune, Tintin, Le Seigneur des Anneaux..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <datalist id="saga-datalist"></datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">N° Volet / Tome</label>
+            <input type="number" id="field-sagaOrder" min="1" placeholder="Ex: 1" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <!-- Nationalité & Code-barres -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nationalité</label>
+            <input type="text" id="field-nationality" placeholder="Ex: Espagne / Mexique" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Code-barres (EAN / ISBN / UPC)</label>
+            <input type="text" id="field-barcode" placeholder="Ex: 3384442254823" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <!-- Synopsis -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Synopsis / Notes</label>
+          <textarea id="field-synopsis" rows="3" placeholder="Synopsis ou notes personnelles..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+
+        <!-- Supports & Édition physique (Films) -->
+        <div id="film-editions-block" class="space-y-3 bg-blue-50/70 p-3.5 rounded-xl border border-blue-200">
+          <label class="block text-xs font-bold uppercase tracking-wider text-blue-900">Support & Édition (Films)</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Support vidéo principal</label>
+              <select id="field-videoFormat" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm font-semibold">
+                <option value="4K">4K Ultra HD</option>
+                <option value="BR" selected>Blu-ray (BR)</option>
+                <option value="DVD">DVD</option>
+              </select>
+            </div>
+            <div class="flex flex-col justify-center gap-2 pt-1">
+              <label class="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                <input type="checkbox" id="field-steelbook" class="rounded text-amber-600" />
+                <span>Édition Steelbook (liseré argent & doré)</span>
+              </label>
+              <label class="inline-flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                <input type="checkbox" id="field-isBoxset" onchange="toggleBoxsetInput()" class="rounded text-blue-600" />
+                <span>Fait partie d'un coffret</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="boxset-name-container" class="hidden pt-1">
+            <label class="block text-xs font-bold text-blue-950 mb-1">Nom du coffret</label>
+            <input type="text" id="field-boxsetName" list="boxset-datalist" placeholder="Ex: Coffret Trilogie 4K" class="w-full px-3.5 py-2 rounded-xl border border-blue-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <datalist id="boxset-datalist"></datalist>
+          </div>
+        </div>
+
+        <!-- Édition / Format pour Séries, Livres et BD -->
+        <div id="other-edition-block" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Édition / Format</label>
+          <input type="text" id="field-editionLabel" placeholder="Ex: Coffret Intégrale, Pléiade, Poche, Album..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+
+        <!-- Statut & Revisionnages / Relectures -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Statut</label>
+            <select id="field-status" onchange="syncStatusAndRewatches()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold">
+              <option value="todo">À voir / À lire</option>
+              <option value="in_progress">En cours</option>
+              <option value="done" selected>Déjà vu / Lu</option>
+            </select>
+          </div>
+          <div>
+            <label id="label-rewatches" class="block text-xs font-semibold text-slate-700 mb-1">Nombre de revisionnages</label>
+            <input type="number" id="field-rewatches" min="0" max="99" value="0" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold bg-white" />
+          </div>
+        </div>
+
+        <!-- Journal des dates de visionnage / lecture -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <label id="label-dates" class="text-xs font-bold uppercase tracking-wider text-slate-600">Dates de visionnage</label>
+            <div class="flex items-center gap-1.5">
+              <input type="date" id="field-new-date" class="px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-xs" />
+              <button type="button" onclick="addFormDate()" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">+ Date</button>
+            </div>
+          </div>
+          <div id="form-dates-list" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Couleur & URL d'affiche -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Teinte</label>
+            <input type="color" id="field-color" value="#0b1e5b" class="w-full h-10 p-1 rounded-xl border border-slate-300 cursor-pointer bg-white" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">URL d'affiche / couverture</label>
+            <input type="url" id="field-poster" placeholder="https://image.tmdb.org/t/p/w500/..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">Annuler</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-sm">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODALE DÉDIÉE TMDB (CLÉ API MÉMORISÉE + SUGGESTIONS EN DIRECT)
+       ===================================================================== -->
+  <div id="tmdb-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden my-auto border border-slate-200">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Recherche TMDB</h3>
+          <p class="text-xs text-slate-500">Clé API mémorisée dans le navigateur et suggestions en direct dès la frappe.</p>
+        </div>
+        <button type="button" onclick="closeTmdbModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/70">✕</button>
+      </div>
+
+      <div class="p-6 space-y-4 max-h-[82vh] overflow-y-auto">
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Clé API TMDB</label>
+            <span id="tmdb-key-status" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700">Non enregistrée</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="password" id="tmdb-api-key" oninput="syncTmdbApiKey(this.value)" placeholder="Collez votre clé API TMDB v3..." class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <div class="flex gap-1.5">
+              <button type="button" onclick="saveTmdbKeyExplicit()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Enregistrer</button>
+              <button type="button" onclick="clearTmdbKey()" class="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">Effacer</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2">
+          <select id="tmdb-media-type" onchange="onModalTmdbInputChange()" class="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold">
+            <option value="movie">Films</option>
+            <option value="tv">Séries</option>
+          </select>
+          <input type="text" id="tmdb-search-query" oninput="onModalTmdbInputChange()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchTmdbModalCatalog(true);}" placeholder="Commencez à taper (2 caractères minimum)..." class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+
+        <div id="tmdb-results" class="space-y-2">
+          <p class="text-xs text-slate-500">Commencez à taper un titre pour voir les suggestions TMDB apparaître automatiquement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODALE SCANNER DE CODE-BARRES (CAMÉRA + SAISIE MANUELLE)
+       ===================================================================== -->
+  <div id="barcode-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden my-auto border border-slate-200">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Scanner de code-barres</h3>
+          <p class="text-xs text-slate-500">Scan caméra (EAN/ISBN) ou saisie manuelle.</p>
+        </div>
+        <button type="button" onclick="closeBarcodeModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/70">✕</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="relative aspect-video w-full rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-300">
+          <video id="barcode-video" class="w-full h-full object-cover hidden" playsinline muted></video>
+          <div id="barcode-placeholder" class="text-center p-4 text-slate-300 space-y-2">
+            <p class="text-sm font-semibold">Caméra inactive</p>
+            <button type="button" onclick="startBarcodeCamera()" class="px-3.5 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-slate-100">
+              Activer la caméra
+            </button>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" id="barcode-manual-input" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupBarcodeValue();}" placeholder="Ex: 3384442254823 ou 9782070116485" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          <button type="button" onclick="lookupBarcodeValue()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm">
+            Valider
+          </button>
+        </div>
+        <p id="barcode-status-msg" class="text-xs text-slate-500"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DÉTAIL D'UN ÉLÉMENT -->
+  <div id="detail-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4 overflow-y-auto">
+    <div id="detail-modal-content" class="bg-white text-slate-900 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden my-auto border border-slate-200"></div>
+  </div>
+
+  <!-- MODALE EXPORT / IMPORT JSON -->
+  <div id="data-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-md w-full shadow-2xl p-6 space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">Sauvegarde JSON</h3>
+        <button type="button" onclick="closeDataModal()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100">✕</button>
+      </div>
+      <p class="text-sm text-slate-600">Vos fiches sont enregistrées automatiquement dans votre navigateur. Exportez ou importez un fichier JSON à tout moment.</p>
+      <div class="space-y-2.5 pt-1">
+        <button type="button" onclick="exportJSON()" class="w-full py-3 px-4 rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800">
+          Exporter toute la collection (.json)
+        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="py-3 px-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 flex items-center justify-center text-center cursor-pointer">
+            <span>Importer (Remplacer)</span>
+            <input type="file" accept=".json" onchange="importJSON(event, 'replace')" class="hidden" />
+          </label>
+          <label class="py-3 px-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-800 font-semibold text-xs hover:bg-blue-50 flex items-center justify-center text-center cursor-pointer">
+            <span>Importer (Fusionner)</span>
+            <input type="file" accept=".json" onchange="importJSON(event, 'merge')" class="hidden" />
+          </label>
+        </div>
+        <button type="button" onclick="confirmResetDemoData()" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">
+          Réinitialiser avec les données d'exemple
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CONFIRMATION (SANS alert() NI confirm()) -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-sm w-full shadow-2xl p-6 space-y-4 border border-slate-200">
+      <h3 id="confirm-modal-title" class="text-base font-bold text-slate-900">Confirmation</h3>
+      <p id="confirm-modal-text" class="text-sm text-slate-600"></p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Annuler</button>
+        <button type="button" id="confirm-modal-ok" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed bottom-20 right-4 z-50 hidden px-4 py-3 rounded-xl bg-slate-900 text-white text-sm font-medium shadow-xl"></div>
+
+  <script>
+    /* =========================================================================
+       CONSTANTES & DONNÉES D'EXEMPLE
+       ========================================================================= */
+    const STORAGE_KEY = 'mycollection_v3_items';
+    const TMDB_KEY_STORAGE = 'mycollection_tmdb_key';
+
+    // Particules incluses en tête du nom de famille pour le tri alphabétique
+    const SURNAME_PARTICLES = new Set([
+      'de', 'du', 'des', 'del', 'della', 'di', 'da', 'dos', 'das',
+      'van', 'von', 'ten', 'ter', 'le', 'la', 'les', 'el', 'al'
+    ]);
+
+    const DEFAULT_ITEMS = [
+      {
+        id: 'film-1',
+        category: 'films',
+        title: 'Le Labyrinthe de Pan',
+        year: 2006,
+        creator: 'Guillermo del Toro',
+        actors: ['Ivana Baquero', 'Sergi López', 'Maribel Verdú', 'Doug Jones'],
+        genres: ['Fantastique', 'Drame', 'Guerre'],
+        metric: 118,
+        nationality: 'Espagne / Mexique',
+        synopsis: 'Espagne, 1944. Fin de la guerre. Carmen, récemment remariée avec le cruel capitaine Vidal, s’installe avec sa fille Ofelia dans un moulin isolé où la jeune fille découvre un mystérieux labyrinthe.',
+        videoFormat: '4K',
+        steelbook: true,
+        isBoxset: false,
+        boxsetName: '',
+        saga: '',
+        sagaOrder: null,
+        barcode: '3384442254823',
+        status: 'done',
+        rewatches: 2,
+        dates: ['2018-11-10', '2022-04-16', '2025-01-19'],
+        color: '#1e3a8a',
+        poster: ''
+      },
+      {
+        id: 'film-2',
+        category: 'films',
+        title: 'La Forme de l’eau',
+        year: 2017,
+        creator: 'Guillermo del Toro',
+        actors: ['Sally Hawkins', 'Michael Shannon', 'Richard Jenkins', 'Octavia Spencer'],
+        genres: ['Fantastique', 'Romance', 'Drame'],
+        metric: 123,
+        nationality: 'États-Unis',
+        synopsis: 'Dans un laboratoire gouvernemental ultra-secret des années 1960, Elisa, une employée muette, découvre une créature amphibie retenue captive.',
+        videoFormat: 'BR',
+        steelbook: false,
+        isBoxset: false,
+        boxsetName: '',
+        saga: '',
+        sagaOrder: null,
+        barcode: '3344428071929',
+        status: 'done',
+        rewatches: 1,
+        dates: ['2018-03-04', '2023-09-12'],
+        color: '#0f766e',
+        poster: ''
+      },
+      {
+        id: 'film-3',
+        category: 'films',
+        title: 'Dune : Première Partie',
+        year: 2021,
+        creator: 'Denis Villeneuve',
+        actors: ['Timothée Chalamet', 'Rebecca Ferguson', 'Oscar Isaac', 'Zendaya'],
+        genres: ['Science-Fiction', 'Aventure'],
+        metric: 155,
+        nationality: 'États-Unis / Canada',
+        synopsis: 'Paul Atreides, jeune homme brillant au destin hors du commun, doit se rendre sur la planète la plus dangereuse de l’univers afin d’assurer l’avenir de sa famille et de son peuple.',
+        videoFormat: '4K',
+        steelbook: true,
+        isBoxset: false,
+        boxsetName: '',
+        saga: 'Dune',
+        sagaOrder: 1,
+        barcode: '5051889681533',
+        status: 'done',
+        rewatches: 2,
+        dates: ['2021-10-15', '2024-02-20', '2025-08-03'],
+        color: '#b45309',
+        poster: ''
+      },
+      {
+        id: 'film-4',
+        category: 'films',
+        title: 'Dune : Deuxième Partie',
+        year: 2024,
+        creator: 'Denis Villeneuve',
+        actors: ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson', 'Javier Bardem'],
+        genres: ['Science-Fiction', 'Aventure'],
+        metric: 166,
+        nationality: 'États-Unis / Canada',
+        synopsis: 'Paul Atreides s’unit à Chani et aux Fremen tout en préparant sa revanche contre les conspirateurs qui ont détruit sa famille.',
+        videoFormat: '4K',
+        steelbook: true,
+        isBoxset: false,
+        boxsetName: '',
+        saga: 'Dune',
+        sagaOrder: 2,
+        barcode: '5051889729143',
+        status: 'todo',
+        rewatches: 0,
+        dates: [],
+        color: '#92400e',
+        poster: ''
+      },
+      {
+        id: 'film-5',
+        category: 'films',
+        title: 'Inception',
+        year: 2010,
+        creator: 'Christopher Nolan',
+        actors: ['Leonardo DiCaprio', 'Joseph Gordon-Levitt', 'Elliot Page', 'Tom Hardy'],
+        genres: ['Science-Fiction', 'Thriller', 'Action'],
+        metric: 148,
+        nationality: 'États-Unis / Royaume-Uni',
+        synopsis: 'Dom Cobb est un voleur expérimenté dans l’art périlleux de l’extraction : sa spécialité consiste à s’approprier les secrets les plus précieux d’un individu enfouis au plus profond de son subconscient.',
+        videoFormat: '4K',
+        steelbook: false,
+        isBoxset: true,
+        boxsetName: 'Coffret Christopher Nolan 4K',
+        saga: '',
+        sagaOrder: null,
+        barcode: '5051889614425',
+        status: 'done',
+        rewatches: 3,
+        dates: ['2010-08-01', '2016-05-14', '2020-11-22', '2024-07-08'],
+        color: '#1d4ed8',
+        poster: ''
+      },
+      {
+        id: 'film-6',
+        category: 'films',
+        title: 'Oppenheimer',
+        year: 2023,
+        creator: 'Christopher Nolan',
+        actors: ['Cillian Murphy', 'Emily Blunt', 'Matt Damon', 'Robert Downey Jr.'],
+        genres: ['Drame', 'Histoire'],
+        metric: 180,
+        nationality: 'États-Unis / Royaume-Uni',
+        synopsis: 'L’histoire du physicien américain J. Robert Oppenheimer et de son rôle dans le développement de la bombe atomique durant le projet Manhattan.',
+        videoFormat: '4K',
+        steelbook: true,
+        isBoxset: false,
+        boxsetName: '',
+        saga: '',
+        sagaOrder: null,
+        barcode: '5053083265182',
+        status: 'done',
+        rewatches: 1,
+        dates: ['2023-07-24', '2024-12-28'],
+        color: '#9a3412',
+        poster: ''
+      },
+      {
+        id: 'film-7',
+        category: 'films',
+        title: 'Le Voyage de Chihiro',
+        year: 2001,
+        creator: 'Hayao Miyazaki',
+        actors: ['Rumi Hiiragi', 'Miyu Irino', 'Mari Natsuki'],
+        genres: ['Animation', 'Fantastique', 'Aventure'],
+        metric: 125,
+        nationality: 'Japon',
+        synopsis: 'Chihiro, une fillette de dix ans, pénètre avec ses parents dans un monde peuplé d’esprits et de dieux anciens.',
+        videoFormat: 'BR',
+        steelbook: false,
+        isBoxset: false,
+        boxsetName: '',
+        saga: '',
+        sagaOrder: null,
+        barcode: '3700301045911',
+        status: 'done',
+        rewatches: 2,
+        dates: ['2015-03-11', '2020-04-02', '2024-01-06'],
+        color: '#be123c',
+        poster: ''
+      },
+      {
+        id: 'film-8',
+        category: 'films',
+        title: 'Les Affranchis',
+        year: 1990,
+        creator: 'Martin Scorsese',
+        actors: ['Robert De Niro', 'Ray Liotta', 'Joe Pesci', 'Lorraine Bracco'],
+        genres: ['Crime', 'Drame'],
+        metric: 146,
+        nationality: 'États-Unis',
+        synopsis: 'Depuis son enfance à Brooklyn, Henry Hill rêve de devenir gangster et gravit les échelons de la mafia new-yorkaise.',
+        videoFormat: 'DVD',
+        steelbook: false,
+        isBoxset: false,
+        boxsetName: '',
+        saga: '',
+        sagaOrder: null,
+        barcode: '7321950120390',
+        status: 'done',
+        rewatches: 0,
+        dates: ['2019-10-05'],
+        color: '#374151',
+        poster: ''
+      },
+      {
+        id: 'serie-1',
+        category: 'series',
+        title: 'Twin Peaks',
+        year: 1990,
+        creator: 'David Lynch & Mark Frost',
+        actors: ['Kyle MacLachlan', 'Michael Ontkean', 'Sherilyn Fenn'],
+        genres: ['Mystère', 'Drame', 'Fantastique'],
+        metric: 30,
+        nationality: 'États-Unis',
+        synopsis: 'L’agent spécial du FBI Dale Cooper enquête sur le meurtre de Laura Palmer dans la paisible ville forestière de Twin Peaks.',
+        editionLabel: 'Coffret Intégrale Blu-ray',
+        saga: 'Twin Peaks',
+        sagaOrder: 1,
+        barcode: '3333973207148',
+        status: 'done',
+        rewatches: 1,
+        dates: ['2017-06-15', '2023-11-04'],
+        color: '#7f1d1d',
+        poster: ''
+      },
+      {
+        id: 'serie-2',
+        category: 'series',
+        title: 'Severance',
+        year: 2022,
+        creator: 'Dan Erickson',
+        actors: ['Adam Scott', 'Britt Lower', 'John Turturro', 'Christopher Walken'],
+        genres: ['Science-Fiction', 'Thriller'],
+        metric: 19,
+        nationality: 'États-Unis',
+        synopsis: 'Les employés de Lumon Industries subissent une dissociation chirurgicale séparant leurs souvenirs professionnels et personnels.',
+        editionLabel: 'Saisons 1 & 2',
+        saga: '',
+        sagaOrder: null,
+        barcode: '',
+        status: 'in_progress',
+        rewatches: 0,
+        dates: ['2025-02-12'],
+        color: '#1e3a8a',
+        poster: ''
+      },
+      {
+        id: 'bd-1',
+        category: 'bd',
+        title: 'Les Cigares du Pharaon',
+        year: 1934,
+        creator: 'Hergé',
+        actors: [],
+        genres: ['Aventure', 'Ligne Claire'],
+        metric: 62,
+        nationality: 'Belgique',
+        synopsis: 'En croisière en Méditerranée, Tintin et Milou croisent l’égyptologue Philémon Siclone et se retrouvent sur la piste d’un trafic international.',
+        editionLabel: 'Album Cartonné',
+        saga: 'Les Aventures de Tintin',
+        sagaOrder: 4,
+        barcode: '9782203001039',
+        status: 'done',
+        rewatches: 2,
+        dates: ['2014-07-12', '2021-08-19', '2024-05-01'],
+        color: '#eab308',
+        poster: ''
+      },
+      {
+        id: 'bd-2',
+        category: 'bd',
+        title: 'Le Lotus bleu',
+        year: 1936,
+        creator: 'Hergé',
+        actors: [],
+        genres: ['Aventure', 'Ligne Claire'],
+        metric: 62,
+        nationality: 'Belgique',
+        synopsis: 'Poursuivant son enquête en Chine à Shanghai, Tintin fait la connaissance du jeune Tchang.',
+        editionLabel: 'Album Cartonné',
+        saga: 'Les Aventures de Tintin',
+        sagaOrder: 5,
+        barcode: '9782203001046',
+        status: 'todo',
+        rewatches: 0,
+        dates: [],
+        color: '#dc2626',
+        poster: ''
+      },
+      {
+        id: 'livre-1',
+        category: 'livres',
+        title: 'Les Misérables',
+        year: 1862,
+        creator: 'Victor Hugo',
+        actors: [],
+        genres: ['Roman historique', 'Classique'],
+        metric: 1792,
+        nationality: 'France',
+        synopsis: 'Le destin de Jean Valjean, ancien bagnard en quête de rédemption dans la France du XIXe siècle.',
+        editionLabel: 'Bibliothèque de la Pléiade',
+        saga: '',
+        sagaOrder: null,
+        barcode: '9782070116485',
+        status: 'done',
+        rewatches: 0,
+        dates: ['2022-09-30'],
+        color: '#5c2323',
+        poster: ''
+      },
+      {
+        id: 'livre-2',
+        category: 'livres',
+        title: 'Le Comte de Monte-Cristo',
+        year: 1844,
+        creator: 'Alexandre Dumas',
+        actors: [],
+        genres: ['Aventure', 'Classique'],
+        metric: 1536,
+        nationality: 'France',
+        synopsis: 'Emprisonné à tort au château d’If, Edmond Dantès s’évade après quatorze ans et prépare méthodiquement sa vengeance.',
+        editionLabel: 'Bibliothèque de la Pléiade',
+        saga: '',
+        sagaOrder: null,
+        barcode: '9782070109791',
+        status: 'todo',
+        rewatches: 0,
+        dates: [],
+        color: '#234234',
+        poster: ''
+      }
+    ];
+
+    /* =========================================================================
+       TRI ALPHABÉTIQUE PAR NOM DE FAMILLE (AVEC PARTICULE EN TÊTE SI PRÉSENTE)
+       ========================================================================= */
+    function getSurnameSortKey(fullName) {
+      const cleaned = (fullName || '').trim().replace(/\s+/g, ' ');
+      if (!cleaned) return '';
+
+      if (cleaned.includes(',')) {
+        const [lastPart, firstPart] = cleaned.split(',').map(s => s.trim());
+        return `${lastPart} ${firstPart || ''}`.trim();
+      }
+
+      const parts = cleaned.split(' ');
+      if (parts.length === 1) return parts[0];
+
+      // Remonte depuis le dernier mot pour conserver les particules rattachées au nom :
+      // "Guillermo del Toro" -> "del Toro Guillermo" (lettre D)
+      // "Brian De Palma" -> "De Palma Brian" (lettre D)
+      // "Lars von Trier" -> "von Trier Lars" (lettre V)
+      // "Pieter van Der Berg" -> "van Der Berg Pieter" (lettre V)
+      let surnameStartIndex = parts.length - 1;
+      while (
+        surnameStartIndex > 1 &&
+        SURNAME_PARTICLES.has(parts[surnameStartIndex - 1].toLowerCase().replace(/['’]/g, ''))
+      ) {
+        surnameStartIndex--;
+      }
+
+      const surnameWithParticles = parts.slice(surnameStartIndex).join(' ');
+      const givenNames = parts.slice(0, surnameStartIndex).join(' ');
+      return `${surnameWithParticles} ${givenNames}`.trim();
+    }
+
+    function compareBySurname(nameA, nameB) {
+      const keyA = getSurnameSortKey(nameA);
+      const keyB = getSurnameSortKey(nameB);
+      const cmp = keyA.localeCompare(keyB, 'fr', { sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+      return (nameA || '').localeCompare(nameB || '', 'fr', { sensitivity: 'base' });
+    }
+
+    /* =========================================================================
+       ÉTAT GLOBAL
+       ========================================================================= */
+    let items = [];
+    let currentTab = 'accueil';
+    let statsCategory = 'films';
+    let randomCategory = 'films';
+    let randomStatusFilter = 'todo'; // 'todo' | 'done' | 'all'
+    let randomResult = null;
+    let randomSagaNotice = '';
+    let formDatesTemp = [];
+    let formTmdbDebounce = null;
+    let modalTmdbDebounce = null;
+    let barcodeStream = null;
+    let barcodeScanFrame = null;
+
+    let filterState = {
+      search: '',
+      statusFilter: 'all',
+      filmSort: 'director_chrono'
+    };
+
+    const UNIVERSE_TABS = [
+      { id: 'films', label: 'Films', icon: '🎬' },
+      { id: 'series', label: 'Séries', icon: '📺' },
+      { id: 'bd', label: 'BD', icon: '💬' },
+      { id: 'livres', label: 'Livres', icon: '📚' }
+    ];
+
+    const BOTTOM_TABS = [
+      { id: 'accueil', label: 'Accueil', icon: '🏠' },
+      ...UNIVERSE_TABS,
+      { id: 'stats', label: 'Stats', icon: '📊' },
+      { id: 'hasard', label: 'Hasard', icon: '🎲' }
+    ];
+
+    /* =========================================================================
+       INITIALISATION & NORMALISATION DES DONNÉES
+       ========================================================================= */
+    function normalizeItem(raw) {
+      const status = raw.status
+        ? raw.status
+        : (raw.completed ? 'done' : 'todo');
+      const rewatches = typeof raw.rewatches === 'number'
+        ? raw.rewatches
+        : Math.max(0, (raw.views || 0) - 1);
+      const videoFormat = raw.videoFormat
+        ? raw.videoFormat
+        : (raw.has4k ? '4K' : (raw.hasBR ? 'BR' : 'DVD'));
+
+      return {
+        ...raw,
+        status,
+        rewatches,
+        videoFormat,
+        dates: Array.isArray(raw.dates) ? raw.dates : []
+      };
+    }
+
+    function cloneDefaultItems() {
+      return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    }
+
+    function initApp() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          items = Array.isArray(parsed) && parsed.length
+            ? parsed.map(normalizeItem)
+            : cloneDefaultItems();
+        } else {
+          items = cloneDefaultItems();
+          saveItems();
+        }
+      } catch (_) {
+        items = cloneDefaultItems();
+      }
+      refreshTmdbKeyUI();
+      switchTab('accueil');
+    }
+
+    function saveItems() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch (_) {
+        showToast('Erreur lors de la sauvegarde locale.');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => toast.classList.add('hidden'), 2800);
+    }
+
+    /* =========================================================================
+       NAVIGATION & IDENTITÉS VISUELLES
+       ========================================================================= */
+    function switchTab(tab) {
+      currentTab = tab;
+      filterState.search = '';
+      filterState.statusFilter = 'all';
+
+      const header = document.getElementById('app-header');
+      const bottomNav = document.getElementById('bottom-nav');
+      const main = document.getElementById('main-container');
+
+      if (tab === 'accueil') {
+        header.classList.add('hidden');
+        bottomNav.classList.add('hidden');
+        bottomNav.classList.remove('flex');
+        document.body.className = 'theme-clean min-h-screen flex flex-col';
+        main.className = 'flex-1 max-w-4xl w-full mx-auto px-4 py-8 flex items-center justify-center';
+        renderHomeView(main);
+        return;
+      }
+
+      header.classList.remove('hidden');
+      bottomNav.classList.remove('hidden');
+      bottomNav.classList.add('flex');
+      main.className = 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-24';
+
+      applyThemeForTab(tab);
+
+      if (['films', 'series', 'bd', 'livres'].includes(tab)) {
+        renderUniverseView(main, tab);
+      } else if (tab === 'stats') {
+        renderStatsView(main);
+      } else if (tab === 'hasard') {
+        renderRandomView(main);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function applyThemeForTab(tab) {
+      const body = document.body;
+      const header = document.getElementById('app-header');
+      const logoIcon = document.getElementById('logo-icon');
+      const logoText = document.getElementById('logo-text');
+      const activeTitle = document.getElementById('header-active-title');
+      const bottomNav = document.getElementById('bottom-nav');
+      const btnAdd = document.getElementById('btn-add-global');
+      const btnTmdb = document.getElementById('btn-tmdb');
+      const btnBarcode = document.getElementById('btn-barcode');
+      const btnBackup = document.getElementById('btn-backup');
+
+      const tabMeta = BOTTOM_TABS.find(t => t.id === tab) || { label: tab, icon: '' };
+      activeTitle.textContent = `${tabMeta.icon} ${tabMeta.label}`;
+
+      const showTmdbBtn = tab === 'films' || tab === 'series';
+      btnTmdb.classList.toggle('hidden', !showTmdbBtn);
+      btnTmdb.classList.toggle('flex', showTmdbBtn);
+
+      body.classList.remove('theme-clean', 'theme-films', 'theme-series', 'theme-livres', 'theme-bd');
+
+      if (tab === 'films') {
+        body.classList.add('theme-films');
+        header.className = 'sticky top-0 z-30 backdrop-blur-md border-b border-[#facc15]/30 bg-[#0b1e5b]/90 text-white';
+        logoIcon.className = 'w-9 h-9 rounded-xl flex items-center justify-center bg-[#facc15] text-[#0b1e5b] font-bold';
+        logoText.className = 'hidden sm:inline text-lg font-bold tracking-wide font-blockbuster text-[#facc15] uppercase';
+        activeTitle.className = 'text-xs sm:text-sm font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-xl bg-[#facc15]/15 text-[#facc15] border border-[#facc15]/35';
+        bottomNav.className = 'fixed bottom-0 inset-x-0 z-30 border-t border-[#facc15]/30 bg-[#071440]/95 backdrop-blur-lg px-1 py-1.5 flex justify-around items-center text-white';
+        btnAdd.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[#facc15] text-[#0b1e5b] hover:bg-yellow-300 transition flex items-center gap-1';
+        btnTmdb.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#facc15]/20 hover:bg-[#facc15]/30 text-[#facc15] border border-[#facc15]/40 transition items-center gap-1.5';
+        btnBarcode.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-blue-100 transition flex items-center gap-1.5';
+        btnBackup.className = 'p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/20 text-blue-100 transition flex items-center gap-1.5';
+      } else if (tab === 'series') {
+        body.classList.add('theme-series');
+        header.className = 'sticky top-0 z-30 backdrop-blur-md border-b border-amber-700/40 bg-[#1f1916]/90 text-[#F5EFE6]';
+        logoIcon.className = 'w-9 h-9 rounded-2xl flex items-center justify-center bg-amber-600/20 border-2 border-amber-500/60 text-amber-400';
+        logoText.className = 'hidden sm:inline text-lg font-bold tracking-tight text-amber-100';
+        activeTitle.className = 'text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        bottomNav.className = 'fixed bottom-0 inset-x-0 z-30 border-t border-amber-700/40 bg-[#1f1916]/95 backdrop-blur-lg px-1 py-1.5 flex justify-around items-center text-[#F5EFE6]';
+        btnAdd.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-600 text-white hover:bg-amber-500 transition flex items-center gap-1';
+        btnTmdb.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition items-center gap-1.5';
+        btnBarcode.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/15 text-amber-200 transition flex items-center gap-1.5';
+        btnBackup.className = 'p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/15 text-amber-200 transition flex items-center gap-1.5';
+      } else if (tab === 'livres') {
+        body.classList.add('theme-livres');
+        header.className = 'sticky top-0 z-30 backdrop-blur-md border-b border-[#D6C7B2] bg-[#f6f1e7]/90 text-[#261C15]';
+        logoIcon.className = 'w-9 h-9 rounded-xl flex items-center justify-center bg-[#5c2323] text-[#faf6ee]';
+        logoText.className = 'hidden sm:inline text-lg font-bold tracking-tight font-library text-[#261C15]';
+        activeTitle.className = 'text-xs sm:text-sm font-bold font-library px-2.5 py-1 rounded-xl bg-[#5c2323]/10 text-[#5c2323]';
+        bottomNav.className = 'fixed bottom-0 inset-x-0 z-30 border-t border-[#D6C7B2] bg-[#f6f1e7]/95 backdrop-blur-lg px-1 py-1.5 flex justify-around items-center text-[#261C15]';
+        btnAdd.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#234234] text-[#faf6ee] hover:bg-[#193026] transition flex items-center gap-1';
+        btnBarcode.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#EBE1D1] hover:bg-[#DFD2BD] text-[#4A3828] transition flex items-center gap-1.5';
+        btnBackup.className = 'p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#EBE1D1] hover:bg-[#DFD2BD] text-[#4A3828] transition flex items-center gap-1.5';
+      } else if (tab === 'bd') {
+        body.classList.add('theme-bd');
+        header.className = 'sticky top-0 z-30 backdrop-blur-md border-b-2 border-[#18181b] bg-[#eab308]/95 text-[#18181b]';
+        logoIcon.className = 'w-9 h-9 rounded-xl flex items-center justify-center bg-[#dc2626] text-white border-2 border-[#18181b]';
+        logoText.className = 'hidden sm:inline text-lg font-extrabold tracking-tight font-comic text-[#18181b]';
+        activeTitle.className = 'text-xs sm:text-sm font-extrabold font-comic px-2.5 py-1 rounded-xl bg-white text-[#18181b] border-2 border-[#18181b]';
+        bottomNav.className = 'fixed bottom-0 inset-x-0 z-30 border-t-2 border-[#18181b] bg-[#eab308]/95 backdrop-blur-lg px-1 py-1.5 flex justify-around items-center text-[#18181b]';
+        btnAdd.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[#0284c7] text-white border-2 border-[#18181b] hover:bg-sky-700 transition flex items-center gap-1';
+        btnBarcode.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white border-2 border-[#18181b] text-[#18181b] hover:bg-slate-100 transition flex items-center gap-1.5';
+        btnBackup.className = 'p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-white border-2 border-[#18181b] text-[#18181b] hover:bg-slate-100 transition flex items-center gap-1.5';
+      } else {
+        body.classList.add('theme-clean');
+        header.className = 'sticky top-0 z-30 backdrop-blur-md border-b border-slate-200 bg-white/90 text-slate-900';
+        logoIcon.className = 'w-9 h-9 rounded-xl flex items-center justify-center bg-slate-900 text-white';
+        logoText.className = 'hidden sm:inline text-lg font-bold tracking-tight text-slate-900';
+        activeTitle.className = 'text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800';
+        bottomNav.className = 'fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur-lg px-1 py-1.5 flex justify-around items-center text-slate-800';
+        btnAdd.className = 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1';
+        btnBarcode.className = 'px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5';
+        btnBackup.className = 'p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5';
+      }
+
+      renderBottomNav(tab);
+    }
+
+    function renderBottomNav(activeTab) {
+      const bottomNav = document.getElementById('bottom-nav');
+      bottomNav.innerHTML = BOTTOM_TABS.map(t => {
+        const isActive = t.id === activeTab;
+        let activeStyle = isActive ? 'font-extrabold scale-105 opacity-100' : 'opacity-65 hover:opacity-100';
+        if (isActive && activeTab === 'films') activeStyle += ' text-[#facc15]';
+        if (isActive && activeTab === 'bd') activeStyle += ' text-[#dc2626]';
+        return `
+          <button type="button" onclick="switchTab('${t.id}')" class="flex flex-col items-center justify-center py-1 px-1.5 sm:px-3 rounded-xl transition ${activeStyle}">
+            <span class="text-base leading-none mb-0.5">${t.icon}</span>
+            <span class="text-[10px] sm:text-xs tracking-tight">${t.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    /* =========================================================================
+       1. ÉCRAN D'ACCUEIL MINIMALISTE (LOGO + TITRE + GRAND CARRÉ 4 UNIVERS)
+       ========================================================================= */
+    function renderHomeView(container) {
+      container.innerHTML = `
+        <div class="w-full flex flex-col items-center justify-center gap-7">
+          <div class="flex flex-col items-center gap-2.5">
+            <div class="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="7" height="16" rx="1.5"></rect>
+                <rect x="14" y="4" width="7" height="10" rx="1.5"></rect>
+                <line x1="14" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">MyCollection</h1>
+          </div>
+
+          <div class="w-full max-w-md aspect-square bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-5 grid grid-cols-2 grid-rows-2 gap-3 sm:gap-4">
+            ${UNIVERSE_TABS.map(u => `
+              <button type="button" onclick="switchTab('${u.id}')" class="rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all flex flex-col items-center justify-center gap-2 p-4 group active:scale-[0.98]">
+                <span class="text-3xl sm:text-4xl transition-transform group-hover:scale-110">${u.icon}</span>
+                <span class="text-base sm:text-lg font-bold tracking-tight">${u.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* =========================================================================
+       2-5. VUES DES UNIVERS
+       ========================================================================= */
+    function renderUniverseView(container, category) {
+      const catItems = items.filter(i => i.category === category);
+      const isMedia = category === 'films' || category === 'series';
+      const doneLabel = isMedia ? 'Déjà vu' : 'Lu';
+      const todoLabel = isMedia ? 'À voir' : 'À lire';
+
+      let filtered = catItems.filter(item => {
+        if (filterState.statusFilter === 'done' && item.status !== 'done') return false;
+        if (filterState.statusFilter === 'todo' && item.status !== 'todo') return false;
+        if (filterState.statusFilter === 'in_progress' && item.status !== 'in_progress') return false;
+        if (filterState.search.trim()) {
+          const q = filterState.search.toLowerCase();
+          const hay = [
+            item.title, item.creator, item.nationality || '', item.synopsis || '',
+            ...(item.actors || []), ...(item.genres || []),
+            item.saga || '', item.boxsetName || '', item.editionLabel || '', item.barcode || ''
+          ].join(' ').toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (category === 'films') {
+        filtered.sort((a, b) => {
+          if (filterState.filmSort === 'director_chrono') {
+            const cmp = compareBySurname(a.creator, b.creator);
+            if (cmp !== 0) return cmp;
+            const yearDiff = (a.year || 0) - (b.year || 0);
+            return yearDiff !== 0 ? yearDiff : (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+          }
+          if (filterState.filmSort === 'year_desc') return (b.year || 0) - (a.year || 0);
+          return (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+        });
+      } else if (category === 'series') {
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }));
+      } else if (category === 'livres') {
+        filtered.sort((a, b) => {
+          const cmp = compareBySurname(a.creator, b.creator);
+          return cmp !== 0 ? cmp : (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+        });
+      } else if (category === 'bd') {
+        filtered.sort((a, b) => {
+          const keyA = a.saga || compareBySurname(a.creator, '') || a.title || '';
+          const keyB = b.saga || compareBySurname(b.creator, '') || b.title || '';
+          const cmp = keyA.localeCompare(keyB, 'fr', { sensitivity: 'base' });
+          if (cmp !== 0) return cmp;
+          return (a.sagaOrder || a.year || 0) - (b.sagaOrder || b.year || 0);
+        });
+      }
+
+      let banner = '';
+      let filterBar = '';
+
+      if (category === 'films') {
+        banner = `
+          <div class="rounded-2xl p-5 sm:p-6 bg-[#071440] border-2 border-[#facc15] shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="inline-block px-2.5 py-0.5 rounded bg-[#facc15] text-[#0b1e5b] text-[11px] font-extrabold uppercase tracking-widest mb-1">
+                BLOCKBUSTER • ${catItems.length} FILM(S)
+              </span>
+              <h1 class="text-2xl sm:text-3xl font-bold font-blockbuster text-[#facc15]">FILMS</h1>
+            </div>
+            <button type="button" onclick="openFormModal('films')" class="px-4 py-2.5 rounded-xl bg-[#facc15] text-[#0b1e5b] font-extrabold text-sm hover:bg-yellow-300 transition self-start sm:self-auto">
+              + Ajouter un film
+            </button>
+          </div>
+        `;
+        filterBar = `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#081749]/90 p-3.5 rounded-2xl border border-[#facc15]/25">
+            <div class="md:col-span-5">
+              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'films')" placeholder="Rechercher un film, réalisateur, acteur, saga..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D2B78] border border-blue-400/30 text-white placeholder-blue-300/60 text-sm focus:outline-none focus:border-[#facc15]" />
+            </div>
+            <div class="md:col-span-4">
+              <select onchange="filterState.filmSort=this.value;renderUniverseView(document.getElementById('main-container'),'films')" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D2B78] border border-blue-400/30 text-amber-200 text-sm font-medium focus:outline-none">
+                <option value="director_chrono" ${filterState.filmSort === 'director_chrono' ? 'selected' : ''}>Réalisateur (Nom A→Z) & Année</option>
+                <option value="title_asc" ${filterState.filmSort === 'title_asc' ? 'selected' : ''}>Titre (A→Z)</option>
+                <option value="year_desc" ${filterState.filmSort === 'year_desc' ? 'selected' : ''}>Année (décroissant)</option>
+              </select>
+            </div>
+            <div class="md:col-span-3 flex gap-1.5">
+              ${renderStatusPills(category, doneLabel, todoLabel)}
+            </div>
+          </div>
+        `;
+      } else if (category === 'series') {
+        banner = `
+          <div class="tv-bezel p-5 sm:p-6 bg-[#2a211c] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-widest text-amber-400">Télé Rétro • ${catItems.length} Série(s)</span>
+              <h1 class="text-2xl sm:text-3xl font-bold text-amber-100 mt-1">Séries</h1>
+            </div>
+            <button type="button" onclick="openFormModal('series')" class="px-4 py-2.5 rounded-xl bg-amber-600 text-white font-bold text-sm hover:bg-amber-500 transition self-start sm:self-auto">
+              + Ajouter une série
+            </button>
+          </div>
+        `;
+        filterBar = `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#2a211c] p-3.5 rounded-2xl border border-amber-700/35">
+            <div class="md:col-span-7">
+              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'series')" placeholder="Rechercher une série, créateur..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#1D1815] border border-amber-700/40 text-amber-50 placeholder-amber-200/40 text-sm focus:outline-none" />
+            </div>
+            <div class="md:col-span-5 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel, true)}</div>
+          </div>
+        `;
+      } else if (category === 'livres') {
+        banner = `
+          <div class="rounded-2xl p-5 sm:p-6 bg-[#faf6ee] border border-[#D8C9B4] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-widest text-[#5c2323]">Bibliothèque • ${catItems.length} Livre(s)</span>
+              <h1 class="text-2xl sm:text-3xl font-bold font-library text-[#261C15] mt-1">Livres</h1>
+            </div>
+            <button type="button" onclick="openFormModal('livres')" class="px-4 py-2.5 rounded-xl bg-[#234234] text-[#faf6ee] font-bold text-sm hover:bg-[#193026] transition self-start sm:self-auto">
+              + Ajouter un livre
+            </button>
+          </div>
+        `;
+        filterBar = `
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#faf6ee] p-3.5 rounded-2xl border border-[#D8C9B4]">
+            <div class="md:col-span-7">
+              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'livres')" placeholder="Rechercher un livre, auteur, édition..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#f6f1e7] border border-[#D6C7B2] text-[#261C15] placeholder-[#8A7560] text-sm focus:outline-none" />
+            </div>
+            <div class="md:col-span-5 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel, true)}</div>
+          </div>
+        `;
+      } else {
+        banner = `
+          <div class="ligne-claire-card rounded-2xl p-5 sm:p-6 bg-[#0284c7] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span class="inline-block px-2.5 py-0.5 rounded bg-[#eab308] text-[#18181b] border border-[#18181b] text-xs font-extrabold uppercase tracking-wider mb-1">
+                LIGNE CLAIRE • ${catItems.length} BD
+              </span>
+              <h1 class="text-2xl sm:text-3xl font-extrabold font-comic">BD</h1>
+            </div>
+            <button type="button" onclick="openFormModal('bd')" class="px-4 py-2.5 rounded-xl bg-[#eab308] text-[#18181b] border-2 border-[#18181b] font-extrabold text-sm hover:bg-yellow-300 transition self-start sm:self-auto">
+              + Ajouter une BD
+            </button>
+          </div>
+        `;
+        filterBar = `
+          <div class="ligne-claire-card grid grid-cols-1 md:grid-cols-12 gap-3 bg-white p-3.5 rounded-2xl">
+            <div class="md:col-span-8">
+              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'bd')" placeholder="Rechercher une BD, série, auteur..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border-2 border-[#18181b] text-[#18181b] text-sm font-medium focus:outline-none" />
+            </div>
+            <div class="md:col-span-4 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel)}</div>
+          </div>
+        `;
+      }
+
+      let gridHTML = '';
+      if (!filtered.length) {
+        gridHTML = `<div class="text-center py-14 rounded-2xl border border-dashed opacity-75"><p class="text-sm font-semibold">Aucun élément trouvé.</p></div>`;
+      } else if (category === 'films' && filterState.filmSort === 'director_chrono') {
+        const groups = {};
+        filtered.forEach(f => {
+          const d = f.creator || 'Réalisateur inconnu';
+          if (!groups[d]) groups[d] = [];
+          groups[d].push(f);
+        });
+        gridHTML = Object.keys(groups)
+          .sort(compareBySurname)
+          .map(dir => {
+            const sortKey = getSurnameSortKey(dir);
+            const firstLetter = sortKey ? sortKey.charAt(0).toUpperCase() : '';
+            return `
+              <section class="space-y-3">
+                <div class="flex items-baseline justify-between border-b border-[#facc15]/30 pb-1">
+                  <h2 class="text-base sm:text-lg font-bold text-[#facc15]">
+                    ${escapeHtml(dir)} <span class="text-xs font-normal text-blue-200">(${groups[dir].length})</span>
+                  </h2>
+                  <span class="text-[11px] uppercase tracking-wider text-blue-200/75">Tri : ${escapeHtml(firstLetter)}</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
+                  ${groups[dir].map(renderCard).join('')}
+                </div>
+              </section>
+            `;
+          }).join('');
+      } else {
+        gridHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
+            ${filtered.map(renderCard).join('')}
+          </div>
+        `;
+      }
+
+      container.innerHTML = `<div class="space-y-6">${banner}${filterBar}<div class="space-y-8">${gridHTML}</div></div>`;
+    }
+
+    function renderStatusPills(category, doneLabel, todoLabel, includeInProgress = false) {
+      const pills = [
+        { id: 'all', label: 'Tous' },
+        { id: 'done', label: doneLabel },
+        ...(includeInProgress ? [{ id: 'in_progress', label: 'En cours' }] : []),
+        { id: 'todo', label: todoLabel }
+      ];
+      return pills.map(s => {
+        const active = filterState.statusFilter === s.id;
+        let cls = 'flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition text-center ';
+        if (category === 'films') {
+          cls += active ? 'bg-[#facc15] text-[#0b1e5b] font-extrabold' : 'bg-[#0D2B78] text-blue-200';
+        } else if (category === 'series') {
+          cls += active ? 'bg-amber-600 text-white' : 'bg-[#1D1815] text-amber-200/75';
+        } else if (category === 'livres') {
+          cls += active ? 'bg-[#234234] text-white' : 'bg-[#f6f1e7] text-[#5C4938]';
+        } else {
+          cls += active ? 'bg-[#dc2626] text-white border-2 border-[#18181b] font-extrabold' : 'bg-slate-100 text-[#18181b] border border-slate-300 font-bold';
+        }
+        return `<button type="button" onclick="filterState.statusFilter='${s.id}';renderUniverseView(document.getElementById('main-container'),'${category}')" class="${cls}">${s.label}</button>`;
+      }).join('');
+    }
+
+    function renderCard(item) {
+      if (item.category === 'films') {
+        const borderCls = item.steelbook
+          ? 'steelbook-border'
+          : 'border border-blue-400/30 shadow-lg hover:border-[#facc15]/70';
+
+        // Haut gauche : uniquement le nombre de revisionnages en chiffre blanc si > 0
+        const rewatchBadge = (item.rewatches || 0) > 0
+          ? `<div class="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-slate-950/80 text-white font-bold text-xs flex items-center justify-center border border-white/40 shadow">${item.rewatches}</div>`
+          : '';
+
+        // Haut droite : badge doré 4K ou badge bleu clair BR
+        let formatBadge = '';
+        if (item.videoFormat === '4K') {
+          formatBadge = `<div class="absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 text-[#0b1e5b] font-black text-[10px] tracking-wider shadow border border-amber-100">4K</div>`;
+        } else if (item.videoFormat === 'BR') {
+          formatBadge = `<div class="absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded bg-sky-400 text-slate-950 font-black text-[10px] tracking-wider shadow border border-sky-100">BR</div>`;
+        }
+
+        const isDone = item.status === 'done';
+        const statusBadge = isDone
+          ? `<span class="px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300">Déjà vu</span>`
+          : `<span class="px-2 py-0.5 rounded-full font-bold bg-white/10 text-blue-200">À voir</span>`;
+
+        return `
+          <article onclick="openDetailModal('${item.id}')" class="group cursor-pointer rounded-2xl bg-[#081A4F] overflow-hidden flex flex-col transition-transform hover:-translate-y-1 ${borderCls}">
+            <div class="relative aspect-[2/3] w-full overflow-hidden" style="background: linear-gradient(150deg, ${item.color || '#1e3a8a'}, #060e2e);">
+              ${item.poster
+                ? `<img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" onerror="this.style.display='none'" class="w-full h-full object-cover" />`
+                : `<div class="w-full h-full p-3.5 flex flex-col justify-between bg-gradient-to-t from-black/85 via-black/20 to-transparent">
+                     <span class="self-end mt-6 text-[10px] font-bold uppercase tracking-widest text-[#facc15]/80">BLOCKBUSTER</span>
+                     <div>
+                       <span class="text-[11px] text-amber-300 font-bold">${item.year}</span>
+                       <p class="font-blockbuster text-lg leading-tight text-white line-clamp-3 mt-0.5">${escapeHtml(item.title)}</p>
+                     </div>
+                   </div>`
+              }
+              ${rewatchBadge}
+              ${formatBadge}
+            </div>
+            <div class="p-3 flex-1 flex flex-col justify-between text-white">
+              <div>
+                <div class="flex items-start justify-between gap-1">
+                  <h3 class="text-xs sm:text-sm font-bold leading-snug line-clamp-1 group-hover:text-[#facc15]">${escapeHtml(item.title)}</h3>
+                  <span class="text-[11px] font-bold text-blue-200 shrink-0">${item.year}</span>
+                </div>
+                <p class="text-[11px] text-blue-200/90 mt-0.5 truncate">${escapeHtml(item.creator)}</p>
+                ${item.nationality ? `<p class="text-[10px] text-blue-300/75 truncate mt-0.5">${escapeHtml(item.nationality)}</p>` : ''}
+                ${item.synopsis ? `<p class="text-[10px] text-blue-100/70 line-clamp-2 mt-1">${escapeHtml(item.synopsis)}</p>` : ''}
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-blue-400/20 flex items-center justify-between text-[10px]">
+                ${statusBadge}
+                <div class="flex items-center gap-1.5">
+                  <span class="text-blue-300/85">${item.metric} min</span>
+                  <button type="button" onclick="event.stopPropagation();quickRewatch('${item.id}')" title="Ajouter un revisionnage" class="px-1.5 py-0.5 rounded bg-[#facc15]/20 hover:bg-[#facc15] text-[#facc15] hover:text-[#0b1e5b] font-extrabold transition">+1</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.category === 'series') {
+        const statusText = item.status === 'done' ? 'Déjà vu' : (item.status === 'in_progress' ? 'En cours' : 'À voir');
+        const statusCls = item.status === 'done'
+          ? 'bg-emerald-500/20 text-emerald-300'
+          : (item.status === 'in_progress' ? 'bg-amber-500/25 text-amber-200' : 'bg-white/10 text-amber-200/80');
+
+        return `
+          <article onclick="openDetailModal('${item.id}')" class="tv-bezel cursor-pointer bg-[#2a211c] overflow-hidden flex flex-col transition-transform hover:-translate-y-1">
+            <div class="relative aspect-[4/3] w-full p-3.5 flex flex-col justify-between overflow-hidden" style="background: radial-gradient(circle at 30% 20%, ${item.color || '#44403C'}, #171412);">
+              <div class="absolute inset-0 tv-scanlines pointer-events-none z-10"></div>
+              ${item.poster ? `<img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" onerror="this.style.display='none'" class="absolute inset-0 w-full h-full object-cover opacity-45" />` : ''}
+              <div class="relative z-20 flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded bg-black/65 border border-amber-400/30 text-[10px] font-mono text-amber-300">${item.year}</span>
+                ${(item.rewatches || 0) > 0 ? `<span class="w-6 h-6 rounded-full bg-black/75 text-white font-bold text-xs flex items-center justify-center border border-amber-400/50">${item.rewatches}</span>` : ''}
+              </div>
+              <div class="relative z-20">
+                <h3 class="text-sm font-bold text-amber-50 leading-snug line-clamp-2">${escapeHtml(item.title)}</h3>
+                <p class="text-[11px] text-amber-200/85 truncate mt-0.5">${escapeHtml(item.creator)}</p>
+              </div>
+            </div>
+            <div class="p-3 flex-1 flex flex-col justify-between text-amber-50">
+              <p class="text-[11px] text-amber-200/75 truncate">${escapeHtml(item.editionLabel || 'Série TV')}</p>
+              <div class="mt-3 pt-2 border-t border-amber-700/30 flex items-center justify-between text-[11px]">
+                <span class="px-2 py-0.5 rounded-full font-semibold ${statusCls}">${statusText}</span>
+                <span class="text-amber-200/75">${item.metric} ép.</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      if (item.category === 'livres') {
+        const statusText = item.status === 'done' ? 'Lu' : (item.status === 'in_progress' ? 'En cours' : 'À lire');
+        const statusCls = item.status === 'done'
+          ? 'bg-[#234234] text-[#faf6ee]'
+          : (item.status === 'in_progress' ? 'bg-[#5c2323] text-[#faf6ee]' : 'bg-[#EBE1D1] text-[#5C4938]');
+
+        return `
+          <article onclick="openDetailModal('${item.id}')" class="cursor-pointer rounded-2xl bg-[#faf6ee] border border-[#D8C9B4] shadow-xs hover:shadow-md overflow-hidden flex flex-col transition-all hover:-translate-y-1">
+            <div class="relative aspect-[3/4] w-full p-4 flex flex-col justify-between border-b border-[#E5D9C5] overflow-hidden" style="background: linear-gradient(160deg, ${item.color || '#5c2323'}, #231911);">
+              ${item.poster ? `<img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" onerror="this.style.display='none'" class="absolute inset-0 w-full h-full object-cover opacity-35" />` : ''}
+              <span class="relative z-10 text-[10px] uppercase tracking-widest text-[#E8DCC8]/85 font-semibold">${item.year}</span>
+              <div class="relative z-10 border-l-2 border-[#D4AF37]/80 pl-2.5">
+                <h3 class="font-library text-base font-bold text-[#FAF6EE] leading-snug line-clamp-3">${escapeHtml(item.title)}</h3>
+                <p class="text-xs text-[#E5D7C1] italic mt-1 truncate">${escapeHtml(item.creator)}</p>
+              </div>
+            </div>
+            <div class="p-3.5 flex-1 flex flex-col justify-between text-[#261C15]">
+              <p class="text-[11px] font-semibold text-[#5c2323] truncate">${escapeHtml(item.editionLabel || 'Édition')}</p>
+              <div class="mt-3 pt-2 border-t border-[#EFE6D8] flex items-center justify-between text-[11px]">
+                <span class="px-2 py-0.5 rounded-full font-semibold ${statusCls}">${statusText}</span>
+                <span class="text-[#7A6552]">${item.metric} p.</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      // BD (Ligne claire / Tintin)
+      const isRead = item.status === 'done';
+      return `
+        <article onclick="openDetailModal('${item.id}')" class="ligne-claire-card cursor-pointer rounded-2xl bg-white overflow-hidden flex flex-col">
+          <div class="relative aspect-[3/4] w-full p-3.5 flex flex-col justify-between border-b-2 border-[#18181b] overflow-hidden" style="background-color: ${item.color || '#eab308'};">
+            ${item.poster ? `<img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" onerror="this.style.display='none'" class="absolute inset-0 w-full h-full object-cover" />` : ''}
+            <div class="relative z-10 flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded bg-white border border-[#18181b] text-[10px] font-extrabold text-[#18181b]">${item.year}</span>
+              ${item.sagaOrder ? `<span class="px-2 py-0.5 rounded bg-[#dc2626] text-white border border-[#18181b] text-[10px] font-extrabold">T.${item.sagaOrder}</span>` : ''}
+            </div>
+            <div class="relative z-10 bg-white/95 border-2 border-[#18181b] rounded-xl p-2.5">
+              <h3 class="font-comic text-sm font-extrabold text-[#18181b] leading-tight line-clamp-2">${escapeHtml(item.title)}</h3>
+              <p class="text-[11px] font-bold text-[#dc2626] truncate mt-0.5">${escapeHtml(item.creator)}</p>
+            </div>
+          </div>
+          <div class="p-3 flex-1 flex flex-col justify-between bg-white text-[#18181b]">
+            <p class="text-[11px] font-extrabold text-[#0284c7] truncate">${escapeHtml(item.saga || item.editionLabel || 'Album')}</p>
+            <div class="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px]">
+              <span class="px-2 py-0.5 rounded-lg font-extrabold border border-[#18181b] ${isRead ? 'bg-[#eab308] text-[#18181b]' : 'bg-slate-100 text-slate-700'}">${isRead ? 'Lu' : 'À lire'}</span>
+              <span class="font-bold text-slate-700">${item.metric} p.</span>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function quickRewatch(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (item.status !== 'done') {
+        item.status = 'done';
+      } else {
+        item.rewatches = (item.rewatches || 0) + 1;
+      }
+      item.dates = [...(item.dates || []), today];
+      saveItems();
+      renderUniverseView(document.getElementById('main-container'), item.category);
+      showToast(`Visionnage enregistré pour « ${item.title} ».`);
+    }
+
+    /* =========================================================================
+       6. STATS : COMPTEURS + TOP 10 RÉALISATEURS + TOP 10 ACTEURS + TOP 5 GENRES + SUPPORTS HORS COFFRETS
+       ========================================================================= */
+    function renderStatsView(container) {
+      const catItems = items.filter(i => i.category === statsCategory);
+      const isMedia = statsCategory === 'films' || statsCategory === 'series';
+
+      const totalCount = catItems.length;
+      const doneCount = catItems.filter(i => i.status === 'done').length;
+      const totalViewsCount = catItems.reduce((sum, i) => {
+        const base = i.status === 'done' ? 1 : 0;
+        return sum + base + (i.rewatches || 0);
+      }, 0);
+
+      const dirCounts = {};
+      const actCounts = {};
+      const genCounts = {};
+
+      catItems.forEach(i => {
+        if (i.creator) dirCounts[i.creator] = (dirCounts[i.creator] || 0) + 1;
+        (i.actors || []).forEach(a => { if (a) actCounts[a] = (actCounts[a] || 0) + 1; });
+        (i.genres || []).forEach(g => { if (g) genCounts[g] = (genCounts[g] || 0) + 1; });
+      });
+
+      const top10Dirs = Object.entries(dirCounts).sort((a, b) => b[1] - a[1] || compareBySurname(a[0], b[0])).slice(0, 10);
+      const top10Acts = Object.entries(actCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr')).slice(0, 10);
+      const top5Gens = Object.entries(genCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr')).slice(0, 5);
+
+      // Répartition des supports : fiches individuelles hors coffrets
+      const standaloneItems = catItems.filter(i => !i.isBoxset);
+      const supports = statsCategory === 'films'
+        ? [
+            { label: '4K Ultra HD', count: standaloneItems.filter(i => i.videoFormat === '4K').length },
+            { label: 'Blu-ray (BR)', count: standaloneItems.filter(i => i.videoFormat === 'BR').length },
+            { label: 'DVD', count: standaloneItems.filter(i => i.videoFormat === 'DVD').length }
+          ]
+        : Object.entries(catItems.reduce((acc, i) => {
+            const k = i.editionLabel || 'Standard';
+            acc[k] = (acc[k] || 0) + 1;
+            return acc;
+          }, {})).map(([label, count]) => ({ label, count }));
+
+      const maxSup = Math.max(1, ...supports.map(s => s.count));
+
+      container.innerHTML = `
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-900">Statistiques</h1>
+            <div class="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl">
+              ${UNIVERSE_TABS.map(u => `
+                <button type="button" onclick="statsCategory='${u.id}';renderStatsView(document.getElementById('main-container'))" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${statsCategory === u.id ? 'bg-slate-900 text-white' : 'text-slate-600'}">${u.icon} ${u.label}</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Compteurs globaux -->
+          <div class="grid grid-cols-3 gap-3 sm:gap-4">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200">
+              <p class="text-xs font-semibold text-slate-500">Total collection</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">${totalCount}</p>
+            </div>
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200">
+              <p class="text-xs font-semibold text-slate-500">${isMedia ? 'Déjà vus' : 'Lus'}</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">${doneCount}</p>
+            </div>
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200">
+              <p class="text-xs font-semibold text-slate-500">${isMedia ? 'Total visionnages' : 'Total lectures'}</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-blue-700 mt-1">${totalViewsCount}</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Supports (fiches individuelles hors coffrets) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Supports (fiches individuelles)</h2>
+              ${supports.map(s => `
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span>${escapeHtml(s.label)}</span><span>${s.count}</span>
+                  </div>
+                  <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-slate-900 rounded-full" style="width:${Math.round((s.count / maxSup) * 100)}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Top 5 Genres -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Top 5 Genres</h2>
+              ${top5Gens.length ? top5Gens.map(([g, c], idx) => `
+                <div class="flex items-center justify-between text-sm py-1 border-b border-slate-100 last:border-0">
+                  <span><strong>#${idx + 1}</strong> ${escapeHtml(g)}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-xs font-bold">${c}</span>
+                </div>
+              `).join('') : '<p class="text-xs text-slate-400">Aucun genre renseigné.</p>'}
+            </div>
+
+            <!-- Top 10 Réalisateurs / Auteurs -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Top 10 ${statsCategory === 'films' ? 'Réalisateurs' : (statsCategory === 'series' ? 'Créateurs' : 'Auteurs')}</h2>
+              ${top10Dirs.length ? top10Dirs.map(([d, c], idx) => `
+                <div class="flex items-center justify-between text-sm py-1 border-b border-slate-100 last:border-0">
+                  <span><strong>#${idx + 1}</strong> ${escapeHtml(d)}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-slate-900 text-white text-xs font-bold">${c}</span>
+                </div>
+              `).join('') : '<p class="text-xs text-slate-400">Aucune donnée.</p>'}
+            </div>
+
+            <!-- Top 10 Acteurs -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Top 10 Acteurs</h2>
+              ${top10Acts.length ? top10Acts.map(([a, c], idx) => `
+                <div class="flex items-center justify-between text-sm py-1 border-b border-slate-100 last:border-0">
+                  <span><strong>#${idx + 1}</strong> ${escapeHtml(a)}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-slate-900 text-white text-xs font-bold">${c}</span>
+                </div>
+              `).join('') : '<p class="text-xs text-slate-400">Aucun acteur renseigné.</p>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* =========================================================================
+       7. HASARD : FILTRE DE STATUT UNIQUE & RESPECT STRICT DES SAGAS
+       ========================================================================= */
+    function getRandomPool() {
+      return items.filter(i => {
+        if (i.category !== randomCategory) return false;
+        if (randomStatusFilter === 'todo' && i.status === 'done') return false;
+        if (randomStatusFilter === 'done' && i.status !== 'done') return false;
+        return true;
+      });
+    }
+
+    function renderRandomView(container) {
+      const isMedia = randomCategory === 'films' || randomCategory === 'series';
+      const statusOptions = isMedia
+        ? [
+            { id: 'todo', label: 'À voir' },
+            { id: 'done', label: 'Déjà vu' },
+            { id: 'all', label: 'Tous' }
+          ]
+        : [
+            { id: 'todo', label: 'À lire' },
+            { id: 'done', label: 'Lu' },
+            { id: 'all', label: 'Tous' }
+          ];
+
+      const pool = getRandomPool();
+
+      container.innerHTML = `
+        <div class="max-w-xl mx-auto space-y-6">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 space-y-5">
+            <h1 class="text-2xl font-bold text-slate-900">Hasard</h1>
+
+            <div class="grid grid-cols-4 gap-2">
+              ${UNIVERSE_TABS.map(u => `
+                <button type="button" onclick="randomCategory='${u.id}';randomResult=null;randomSagaNotice='';renderRandomView(document.getElementById('main-container'))" class="py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold border transition ${randomCategory === u.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-700 border-slate-200'}">${u.icon} ${u.label}</button>
+              `).join('')}
+            </div>
+
+            <!-- Filtre de statut unique -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Filtre de statut</label>
+              <div class="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-xl">
+                ${statusOptions.map(opt => `
+                  <button type="button" onclick="randomStatusFilter='${opt.id}';randomResult=null;randomSagaNotice='';renderRandomView(document.getElementById('main-container'))" class="py-2 px-3 rounded-lg text-xs font-bold transition ${randomStatusFilter === opt.id ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}">${opt.label}</button>
+                `).join('')}
+              </div>
+            </div>
+
+            <button type="button" onclick="rollRandom()" class="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition">
+              Tirer au sort (${pool.length})
+            </button>
+          </div>
+
+          <div id="random-box">
+            ${randomResult ? `
+              <div class="bg-white rounded-2xl border-2 border-slate-900 p-5 space-y-3 shadow-sm">
+                ${randomSagaNotice ? `<p class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">${escapeHtml(randomSagaNotice)}</p>` : ''}
+                <p class="text-xs font-semibold text-slate-400">${randomResult.year} • ${escapeHtml(randomResult.creator)}</p>
+                <h2 class="text-xl font-bold text-slate-900">${escapeHtml(randomResult.title)}</h2>
+                ${randomResult.saga ? `<p class="text-xs font-bold text-blue-700">Saga : ${escapeHtml(randomResult.saga)}${randomResult.sagaOrder ? ' — Volet #' + randomResult.sagaOrder : ''}</p>` : ''}
+                ${randomResult.synopsis ? `<p class="text-xs text-slate-600 line-clamp-3">${escapeHtml(randomResult.synopsis)}</p>` : ''}
+                <button type="button" onclick="openDetailModal('${randomResult.id}')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white">
+                  Ouvrir la fiche
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function rollRandom() {
+      const pool = getRandomPool();
+      if (!pool.length) {
+        showToast('Aucun titre disponible pour ce filtre.');
+        return;
+      }
+
+      const box = document.getElementById('random-box');
+      if (box) box.classList.add('animate-slot');
+
+      setTimeout(() => {
+        if (box) box.classList.remove('animate-slot');
+        let picked = pool[Math.floor(Math.random() * pool.length)];
+        let notice = '';
+
+        if (picked.saga && picked.saga.trim()) {
+          const peers = items
+            .filter(i => i.category === picked.category && i.saga && i.saga.toLowerCase() === picked.saga.toLowerCase())
+            .sort((a, b) => (a.sagaOrder || a.year || 0) - (b.sagaOrder || b.year || 0));
+
+          const matchingPeers = peers.filter(i => {
+            if (randomStatusFilter === 'todo') return i.status !== 'done';
+            if (randomStatusFilter === 'done') return i.status === 'done';
+            return true;
+          });
+
+          if (matchingPeers.length && matchingPeers[0].id !== picked.id) {
+            picked = matchingPeers[0];
+            notice = `Ordre de la saga « ${picked.saga} » respecté (volet #${picked.sagaOrder || 1}).`;
+          }
+        }
+
+        randomResult = picked;
+        randomSagaNotice = notice;
+        renderRandomView(document.getElementById('main-container'));
+      }, 240);
+    }
+
+    /* =========================================================================
+       TMDB : CLÉ API MÉMORISÉE + SUGGESTIONS EN DIRECT DÈS LA FRAPPE
+       ========================================================================= */
+    function syncTmdbApiKey(val) {
+      const clean = (val || '').trim();
+      localStorage.setItem(TMDB_KEY_STORAGE, clean);
+      const modalInput = document.getElementById('tmdb-api-key');
+      const formInput = document.getElementById('form-tmdb-api-key');
+      if (modalInput && modalInput.value !== clean) modalInput.value = clean;
+      if (formInput && formInput.value !== clean) formInput.value = clean;
+      refreshTmdbKeyUI();
+    }
+
+    function saveTmdbKeyExplicit() {
+      syncTmdbApiKey(document.getElementById('tmdb-api-key').value);
+      showToast('Clé API TMDB enregistrée.');
+      onModalTmdbInputChange();
+    }
+
+    function saveTmdbKeyFromForm() {
+      syncTmdbApiKey(document.getElementById('form-tmdb-api-key').value);
+      showToast('Clé API TMDB enregistrée.');
+      onFormTmdbInputChange();
+    }
+
+    function clearTmdbKey() {
+      localStorage.removeItem(TMDB_KEY_STORAGE);
+      document.getElementById('tmdb-api-key').value = '';
+      document.getElementById('form-tmdb-api-key').value = '';
+      refreshTmdbKeyUI();
+      showToast('Clé API TMDB effacée.');
+    }
+
+    function refreshTmdbKeyUI() {
+      const key = localStorage.getItem(TMDB_KEY_STORAGE) || '';
+      const hasKey = key.length >= 6;
+      const modalBadge = document.getElementById('tmdb-key-status');
+      const formBadge = document.getElementById('form-tmdb-key-status');
+
+      if (modalBadge) {
+        modalBadge.textContent = hasKey ? 'Clé enregistrée ✓' : 'Non enregistrée';
+        modalBadge.className = hasKey
+          ? 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800'
+          : 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700';
+      }
+      if (formBadge) {
+        formBadge.textContent = hasKey ? 'Clé enregistrée ✓' : 'Clé non enregistrée';
+        formBadge.className = hasKey
+          ? 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800'
+          : 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700';
+      }
+    }
+
+    function openTmdbModal() {
+      const key = localStorage.getItem(TMDB_KEY_STORAGE) || '';
+      document.getElementById('tmdb-api-key').value = key;
+      document.getElementById('tmdb-media-type').value = currentTab === 'series' ? 'tv' : 'movie';
+      document.getElementById('tmdb-search-query').value = '';
+      document.getElementById('tmdb-results').innerHTML = '<p class="text-xs text-slate-500">Commencez à taper un titre pour voir les suggestions TMDB apparaître automatiquement.</p>';
+      refreshTmdbKeyUI();
+      const m = document.getElementById('tmdb-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      setTimeout(() => document.getElementById('tmdb-search-query').focus(), 60);
+    }
+
+    function closeTmdbModal() {
+      if (modalTmdbDebounce) clearTimeout(modalTmdbDebounce);
+      const m = document.getElementById('tmdb-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function fetchTmdbSearch(mediaType, query, year = '') {
+      const apiKey = (localStorage.getItem(TMDB_KEY_STORAGE) || '').trim();
+      if (!apiKey) throw new Error('Veuillez saisir votre clé API TMDB pour afficher les suggestions.');
+      let url = `https://api.themoviedb.org/3/search/${mediaType}?api_key=${encodeURIComponent(apiKey)}&language=fr-FR&query=${encodeURIComponent(query)}`;
+      if (year) {
+        const param = mediaType === 'movie' ? 'year' : 'first_air_date_year';
+        url += `&${param}=${encodeURIComponent(year)}`;
+      }
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Erreur API TMDB (${res.status}). Vérifiez votre clé.`);
+      const data = await res.json();
+      return data.results || [];
+    }
+
+    function renderSuggestionCardHTML(entry, mediaType, fromModal) {
+      const title = entry.title || entry.name || 'Sans titre';
+      const y = (entry.release_date || entry.first_air_date || '').slice(0, 4) || '—';
+      const poster = entry.poster_path ? `https://image.tmdb.org/t/p/w185${entry.poster_path}` : '';
+      const typeLabel = mediaType === 'tv' ? 'Série' : 'Film';
+
+      return `
+        <button type="button" onclick="importTmdbIntoForm(${entry.id}, '${mediaType}', ${fromModal})" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/70 transition flex items-center gap-3 bg-white">
+          ${poster
+            ? `<img src="${escapeHtml(poster)}" alt="${escapeHtml(title)}" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-slate-100" />`
+            : `<div class="w-10 h-14 rounded-lg bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500 shrink-0">${y}</div>`
+          }
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs sm:text-sm font-bold text-slate-900 truncate">${escapeHtml(title)}</p>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 shrink-0">${typeLabel} • ${y}</span>
+            </div>
+            <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">${escapeHtml(entry.overview || 'Aucun synopsis disponible.')}</p>
+          </div>
+        </button>
+      `;
+    }
+
+    function onModalTmdbInputChange() {
+      if (modalTmdbDebounce) clearTimeout(modalTmdbDebounce);
+      const q = document.getElementById('tmdb-search-query').value.trim();
+      const box = document.getElementById('tmdb-results');
+      if (q.length < 2) {
+        box.innerHTML = '<p class="text-xs text-slate-500">Tapez au moins 2 caractères pour afficher les suggestions.</p>';
+        return;
+      }
+      box.innerHTML = '<p class="text-xs text-slate-500">Suggestions en cours...</p>';
+      modalTmdbDebounce = setTimeout(() => searchTmdbModalCatalog(false), 300);
+    }
+
+    async function searchTmdbModalCatalog(immediate = false) {
+      if (immediate && modalTmdbDebounce) clearTimeout(modalTmdbDebounce);
+      const mediaType = document.getElementById('tmdb-media-type').value;
+      const query = document.getElementById('tmdb-search-query').value.trim();
+      const box = document.getElementById('tmdb-results');
+      if (!query) {
+        box.innerHTML = '<p class="text-xs text-slate-500">Entrez un titre pour rechercher sur TMDB.</p>';
+        return;
+      }
+      try {
+        const list = (await fetchTmdbSearch(mediaType, query)).slice(0, 8);
+        if (!list.length) {
+          box.innerHTML = '<p class="text-xs text-slate-500">Aucune suggestion trouvée.</p>';
+          return;
+        }
+        box.innerHTML = list.map(entry => renderSuggestionCardHTML(entry, mediaType, true)).join('');
+      } catch (err) {
+        box.innerHTML = `<p class="text-xs text-rose-600 font-semibold">${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    function onFormTmdbInputChange() {
+      if (formTmdbDebounce) clearTimeout(formTmdbDebounce);
+      const q = document.getElementById('form-tmdb-query').value.trim();
+      const wrap = document.getElementById('form-tmdb-suggestions-wrap');
+      const listEl = document.getElementById('form-tmdb-suggestions');
+      const feedback = document.getElementById('form-tmdb-feedback');
+
+      if (q.length < 2) {
+        wrap.classList.add('hidden');
+        listEl.innerHTML = '';
+        feedback.textContent = '';
+        return;
+      }
+
+      wrap.classList.remove('hidden');
+      feedback.textContent = 'Recherche de suggestions...';
+      formTmdbDebounce = setTimeout(() => runFormTmdbSearch(false), 300);
+    }
+
+    async function runFormTmdbSearch(immediate = false) {
+      if (immediate && formTmdbDebounce) clearTimeout(formTmdbDebounce);
+      const cat = document.getElementById('field-category').value;
+      const mediaType = cat === 'series' ? 'tv' : 'movie';
+      const query = document.getElementById('form-tmdb-query').value.trim();
+      const year = document.getElementById('form-tmdb-year').value.trim();
+      const wrap = document.getElementById('form-tmdb-suggestions-wrap');
+      const listEl = document.getElementById('form-tmdb-suggestions');
+      const feedback = document.getElementById('form-tmdb-feedback');
+
+      if (!query || query.length < 2) return;
+      wrap.classList.remove('hidden');
+
+      try {
+        const list = (await fetchTmdbSearch(mediaType, query, year)).slice(0, 7);
+        if (!list.length) {
+          feedback.textContent = 'Aucune suggestion trouvée sur TMDB.';
+          listEl.innerHTML = '';
+          return;
+        }
+        feedback.textContent = 'Cliquez sur une suggestion pour remplir la fiche :';
+        listEl.innerHTML = list.map(entry => renderSuggestionCardHTML(entry, mediaType, false)).join('');
+      } catch (err) {
+        feedback.textContent = err.message;
+        listEl.innerHTML = '';
+      }
+    }
+
+    async function importTmdbIntoForm(tmdbId, mediaType, fromModal) {
+      const apiKey = (localStorage.getItem(TMDB_KEY_STORAGE) || '').trim();
+      if (!apiKey) return;
+
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${encodeURIComponent(apiKey)}&language=fr-FR&append_to_response=credits`);
+        if (!res.ok) throw new Error('Détails TMDB indisponibles.');
+        const d = await res.json();
+
+        const targetCat = mediaType === 'tv' ? 'series' : 'films';
+        if (fromModal) {
+          closeTmdbModal();
+          openFormModal(targetCat);
+        }
+
+        const title = d.title || d.name || '';
+        const yearStr = (d.release_date || d.first_air_date || '').slice(0, 4);
+        const year = yearStr ? parseInt(yearStr, 10) : 2024;
+        const crew = (d.credits && d.credits.crew) || [];
+        const director = (crew.find(c => c.job === 'Director') || crew[0] || {}).name || ((d.created_by && d.created_by[0]) ? d.created_by[0].name : '');
+        const actors = (((d.credits && d.credits.cast) || []).slice(0, 5)).map(a => a.name);
+        const genres = (d.genres || []).map(g => g.name);
+        const countries = (d.production_countries || []).map(c => c.name);
+        const nationality = countries.length ? countries.join(' / ') : ((d.origin_country || []).join(' / '));
+        const synopsis = d.overview || '';
+        const poster = d.poster_path ? `https://image.tmdb.org/t/p/w500${d.poster_path}` : '';
+        const metric = mediaType === 'movie' ? (d.runtime || 120) : (d.number_of_episodes || 10);
+
+        document.getElementById('field-title').value = title;
+        document.getElementById('field-year').value = year;
+        document.getElementById('field-creator').value = director;
+        document.getElementById('field-actors').value = actors.join(', ');
+        document.getElementById('field-genres').value = genres.join(', ');
+        document.getElementById('field-nationality').value = nationality;
+        document.getElementById('field-synopsis').value = synopsis;
+        document.getElementById('field-poster').value = poster;
+        document.getElementById('field-metric').value = metric;
+
+        const fb = document.getElementById('form-tmdb-feedback');
+        if (fb) fb.textContent = `Fiche préremplie depuis TMDB : ${title}`;
+        showToast(`« ${title} » prérempli depuis TMDB.`);
+      } catch (_) {
+        showToast('Erreur lors du chargement de la fiche TMDB.');
+      }
+    }
+
+    /* =========================================================================
+       FORMULAIRE CRUD + JOURNAL DE DATES
+       ========================================================================= */
+    function populateDatalists() {
+      const sagas = [...new Set(items.map(i => i.saga).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+      document.getElementById('saga-datalist').innerHTML = sagas.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+
+      const boxsets = [...new Set(items.filter(i => i.category === 'films' && i.boxsetName).map(i => i.boxsetName))].sort((a, b) => a.localeCompare(b, 'fr'));
+      document.getElementById('boxset-datalist').innerHTML = boxsets.map(b => `<option value="${escapeHtml(b)}"></option>`).join('');
+    }
+
+    function setFormCategory(cat) {
+      document.getElementById('field-category').value = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.className = btn.dataset.cat === cat
+          ? 'cat-btn py-2 px-2 rounded-xl border-2 border-slate-900 bg-slate-900 text-white text-xs font-bold transition'
+          : 'cat-btn py-2 px-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-bold hover:bg-slate-100 transition';
+      });
+
+      const isMedia = cat === 'films' || cat === 'series';
+      document.getElementById('form-tmdb-section').classList.toggle('hidden', !isMedia);
+      document.getElementById('wrap-actors').classList.toggle('hidden', !isMedia);
+      document.getElementById('film-editions-block').classList.toggle('hidden', cat !== 'films');
+      document.getElementById('other-edition-block').classList.toggle('hidden', cat === 'films');
+
+      document.getElementById('label-creator').textContent =
+        cat === 'films' ? 'Réalisateur *' : cat === 'series' ? 'Créateur *' : cat === 'livres' ? 'Auteur *' : 'Auteur / Scénariste *';
+      document.getElementById('label-metric').textContent =
+        cat === 'films' ? 'Durée (min)' : cat === 'series' ? 'Épisodes' : 'Pages';
+      document.getElementById('label-rewatches').textContent =
+        isMedia ? 'Nombre de revisionnages' : 'Nombre de relectures';
+      document.getElementById('label-dates').textContent =
+        isMedia ? 'Dates de visionnage' : 'Dates de lecture';
+
+      if (isMedia && document.getElementById('form-tmdb-query').value.trim().length >= 2) {
+        onFormTmdbInputChange();
+      }
+    }
+
+    function toggleBoxsetInput() {
+      const checked = document.getElementById('field-isBoxset').checked;
+      document.getElementById('boxset-name-container').classList.toggle('hidden', !checked);
+    }
+
+    function syncStatusAndRewatches() {
+      const status = document.getElementById('field-status').value;
+      const rwEl = document.getElementById('field-rewatches');
+      if (status !== 'done') rwEl.value = 0;
+    }
+
+    function renderFormDates() {
+      const list = document.getElementById('form-dates-list');
+      if (!formDatesTemp.length) {
+        list.innerHTML = '<span class="text-xs text-slate-400">Aucune date enregistrée.</span>';
+        return;
+      }
+      list.innerHTML = formDatesTemp.map((d, idx) => `
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700">
+          <span>${escapeHtml(d)}</span>
+          <button type="button" onclick="removeFormDate(${idx})" class="text-rose-600 hover:text-rose-800 font-bold">✕</button>
+        </span>
+      `).join('');
+    }
+
+    function addFormDate() {
+      const input = document.getElementById('field-new-date');
+      const val = input.value;
+      if (!val) return;
+      formDatesTemp.push(val);
+      formDatesTemp.sort();
+      input.value = '';
+      document.getElementById('field-status').value = 'done';
+      if (formDatesTemp.length > 1) {
+        document.getElementById('field-rewatches').value = formDatesTemp.length - 1;
+      }
+      renderFormDates();
+    }
+
+    function removeFormDate(idx) {
+      formDatesTemp.splice(idx, 1);
+      if (formDatesTemp.length >= 1) {
+        document.getElementById('field-rewatches').value = Math.max(0, formDatesTemp.length - 1);
+      }
+      renderFormDates();
+    }
+
+    function openFormModal(defaultCat = null, editItem = null) {
+      populateDatalists();
+      const form = document.getElementById('item-form');
+      form.reset();
+      document.getElementById('form-tmdb-suggestions-wrap').classList.add('hidden');
+      document.getElementById('form-tmdb-suggestions').innerHTML = '';
+      document.getElementById('form-tmdb-api-key').value = localStorage.getItem(TMDB_KEY_STORAGE) || '';
+      document.getElementById('field-new-date').value = new Date().toISOString().slice(0, 10);
+      refreshTmdbKeyUI();
+
+      const cat = editItem ? editItem.category : (defaultCat || (['films', 'series', 'bd', 'livres'].includes(currentTab) ? currentTab : 'films'));
+      setFormCategory(cat);
+
+      if (editItem) {
+        document.getElementById('form-modal-title').textContent = `Modifier « ${editItem.title} »`;
+        document.getElementById('field-id').value = editItem.id;
+        document.getElementById('field-title').value = editItem.title;
+        document.getElementById('field-year').value = editItem.year || 2024;
+        document.getElementById('field-creator').value = editItem.creator || '';
+        document.getElementById('field-actors').value = (editItem.actors || []).join(', ');
+        document.getElementById('field-genres').value = (editItem.genres || []).join(', ');
+        document.getElementById('field-metric').value = editItem.metric || 120;
+        document.getElementById('field-saga').value = editItem.saga || '';
+        document.getElementById('field-sagaOrder').value = editItem.sagaOrder || '';
+        document.getElementById('field-nationality').value = editItem.nationality || '';
+        document.getElementById('field-barcode').value = editItem.barcode || '';
+        document.getElementById('field-synopsis').value = editItem.synopsis || '';
+        document.getElementById('field-videoFormat').value = editItem.videoFormat || 'BR';
+        document.getElementById('field-steelbook').checked = !!editItem.steelbook;
+        document.getElementById('field-isBoxset').checked = !!editItem.isBoxset;
+        document.getElementById('field-boxsetName').value = editItem.boxsetName || '';
+        document.getElementById('field-editionLabel').value = editItem.editionLabel || '';
+        document.getElementById('field-status').value = editItem.status || 'done';
+        document.getElementById('field-rewatches').value = editItem.rewatches || 0;
+        document.getElementById('field-color').value = editItem.color || '#0b1e5b';
+        document.getElementById('field-poster').value = editItem.poster || '';
+        formDatesTemp = [...(editItem.dates || [])];
+      } else {
+        document.getElementById('form-modal-title').textContent = 'Ajouter à la collection';
+        document.getElementById('field-id').value = '';
+        document.getElementById('field-videoFormat').value = 'BR';
+        document.getElementById('field-status').value = 'todo';
+        document.getElementById('field-rewatches').value = 0;
+        formDatesTemp = [];
+      }
+
+      renderFormDates();
+      toggleBoxsetInput();
+      const m = document.getElementById('form-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeFormModal() {
+      if (formTmdbDebounce) clearTimeout(formTmdbDebounce);
+      const m = document.getElementById('form-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('field-id').value;
+      const category = document.getElementById('field-category').value;
+      const isBoxset = document.getElementById('field-isBoxset').checked;
+      const status = document.getElementById('field-status').value;
+
+      const entry = {
+        id: id || ('item-' + Date.now()),
+        category,
+        title: document.getElementById('field-title').value.trim(),
+        year: parseInt(document.getElementById('field-year').value, 10) || 2024,
+        creator: document.getElementById('field-creator').value.trim(),
+        actors: document.getElementById('field-actors').value.split(',').map(s => s.trim()).filter(Boolean),
+        genres: document.getElementById('field-genres').value.split(',').map(s => s.trim()).filter(Boolean),
+        metric: parseInt(document.getElementById('field-metric').value, 10) || 0,
+        saga: document.getElementById('field-saga').value.trim(),
+        sagaOrder: parseInt(document.getElementById('field-sagaOrder').value, 10) || null,
+        nationality: document.getElementById('field-nationality').value.trim(),
+        barcode: document.getElementById('field-barcode').value.trim(),
+        synopsis: document.getElementById('field-synopsis').value.trim(),
+        videoFormat: category === 'films' ? document.getElementById('field-videoFormat').value : 'BR',
+        steelbook: category === 'films' ? document.getElementById('field-steelbook').checked : false,
+        isBoxset: category === 'films' ? isBoxset : false,
+        boxsetName: (category === 'films' && isBoxset) ? document.getElementById('field-boxsetName').value.trim() : '',
+        editionLabel: category !== 'films' ? document.getElementById('field-editionLabel').value.trim() : '',
+        status,
+        rewatches: status === 'done' ? (parseInt(document.getElementById('field-rewatches').value, 10) || 0) : 0,
+        dates: [...formDatesTemp],
+        color: document.getElementById('field-color').value || '#0b1e5b',
+        poster: document.getElementById('field-poster').value.trim()
+      };
+
+      if (id) {
+        const idx = items.findIndex(i => i.id === id);
+        if (idx !== -1) items[idx] = entry;
+      } else {
+        items.unshift(entry);
+      }
+
+      saveItems();
+      closeFormModal();
+      switchTab(currentTab === 'accueil' ? category : currentTab);
+      showToast(`« ${entry.title} » enregistré.`);
+    }
+
+    function openDetailModal(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      const isMedia = item.category === 'films' || item.category === 'series';
+      const statusLabel = item.status === 'done'
+        ? (isMedia ? 'Déjà vu' : 'Lu')
+        : (item.status === 'in_progress' ? 'En cours' : (isMedia ? 'À voir' : 'À lire'));
+      const borderCls = (item.category === 'films' && item.steelbook) ? 'steelbook-border' : 'border border-slate-200';
+
+      const box = document.getElementById('detail-modal-content');
+      box.className = `bg-white text-slate-900 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden my-auto ${borderCls}`;
+      box.innerHTML = `
+        <div class="p-5 text-white flex items-start gap-4" style="background: linear-gradient(135deg, ${item.color || '#0b1e5b'}, #0F172A);">
+          ${item.poster
+            ? `<img src="${escapeHtml(item.poster)}" alt="${escapeHtml(item.title)}" onerror="this.style.display='none'" class="w-20 h-28 object-cover rounded-xl shrink-0 border border-white/25" />`
+            : ''
+          }
+          <div class="flex-1 min-w-0">
+            <span class="text-xs font-bold uppercase tracking-widest opacity-80">${item.year} • ${escapeHtml(item.creator)}</span>
+            <h3 class="text-xl font-bold mt-1 leading-snug">${escapeHtml(item.title)}</h3>
+            ${item.nationality ? `<p class="text-xs text-blue-100 mt-1">Nationalité : <strong>${escapeHtml(item.nationality)}</strong></p>` : ''}
+            ${item.saga ? `<p class="text-xs font-semibold text-amber-300 mt-1">Saga : ${escapeHtml(item.saga)}${item.sagaOrder ? ' #' + item.sagaOrder : ''}</p>` : ''}
+          </div>
+          <button type="button" onclick="closeDetailModal()" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white shrink-0">✕</button>
+        </div>
+
+        <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div class="flex flex-wrap gap-2">
+            <span class="px-3 py-1 rounded-full text-xs font-bold ${item.status === 'done' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}">
+              ${statusLabel}${(item.rewatches || 0) > 0 ? ' • ' + item.rewatches : ''}
+            </span>
+            ${item.category === 'films' && item.videoFormat === '4K' ? '<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold">4K</span>' : ''}
+            ${item.category === 'films' && item.videoFormat === 'BR' ? '<span class="px-2.5 py-1 rounded-full bg-sky-100 text-sky-900 text-xs font-bold">BR</span>' : ''}
+            ${item.isBoxset && item.boxsetName ? `<span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 text-xs font-bold">${escapeHtml(item.boxsetName)}</span>` : ''}
+            ${item.editionLabel ? `<span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold">${escapeHtml(item.editionLabel)}</span>` : ''}
+          </div>
+
+          ${item.synopsis ? `
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Synopsis</p>
+              <p class="text-sm text-slate-700 leading-relaxed mt-1">${escapeHtml(item.synopsis)}</p>
+            </div>
+          ` : ''}
+
+          ${(item.actors && item.actors.length) ? `
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Casting</p>
+              <p class="text-sm text-slate-700 mt-0.5">${escapeHtml(item.actors.join(', '))}</p>
+            </div>
+          ` : ''}
+
+          ${(item.genres && item.genres.length) ? `
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Genres</p>
+              <p class="text-sm text-slate-700 mt-0.5">${escapeHtml(item.genres.join(', '))}</p>
+            </div>
+          ` : ''}
+
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-500">${isMedia ? 'Dates de visionnage' : 'Dates de lecture'}</p>
+              <button type="button" onclick="addTodayDateToItem('${item.id}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">
+                + Aujourd'hui
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${(item.dates && item.dates.length)
+                ? item.dates.map((d, idx) => `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-xs font-semibold text-slate-700">
+                      <span>${escapeHtml(d)}</span>
+                      <button type="button" onclick="removeDateFromItem('${item.id}', ${idx})" class="text-rose-600 hover:text-rose-800 font-bold">✕</button>
+                    </span>
+                  `).join('')
+                : '<span class="text-xs text-slate-400">Aucune date enregistrée.</span>'
+              }
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <button type="button" onclick="addTodayDateToItem('${item.id}')" class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">
+              +1 ${isMedia ? 'Revisionnage' : 'Relecture'}
+            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="closeDetailModal();openFormModal('${item.category}',items.find(x=>x.id==='${item.id}'))" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">
+                Modifier
+              </button>
+              <button type="button" onclick="confirmDeleteItem('${item.id}')" class="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const m = document.getElementById('detail-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeDetailModal() {
+      const m = document.getElementById('detail-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function addTodayDateToItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (item.status !== 'done') {
+        item.status = 'done';
+      } else {
+        item.rewatches = (item.rewatches || 0) + 1;
+      }
+      item.dates = [...(item.dates || []), today];
+      saveItems();
+      openDetailModal(id);
+      if (['films', 'series', 'bd', 'livres'].includes(currentTab)) {
+        renderUniverseView(document.getElementById('main-container'), currentTab);
+      }
+    }
+
+    function removeDateFromItem(id, dateIdx) {
+      const item = items.find(i => i.id === id);
+      if (!item || !Array.isArray(item.dates)) return;
+      item.dates.splice(dateIdx, 1);
+      if (item.status === 'done' && item.dates.length >= 1) {
+        item.rewatches = Math.max(0, item.dates.length - 1);
+      } else if (item.dates.length === 0 && (item.rewatches || 0) > 0) {
+        item.rewatches = Math.max(0, item.rewatches - 1);
+      }
+      saveItems();
+      openDetailModal(id);
+      if (['films', 'series', 'bd', 'livres'].includes(currentTab)) {
+        renderUniverseView(document.getElementById('main-container'), currentTab);
+      }
+    }
+
+    /* =========================================================================
+       CONFIRMATIONS PERSONNALISÉES (SANS alert() NI confirm())
+       ========================================================================= */
+    function openConfirmModal(title, text, onConfirm) {
+      document.getElementById('confirm-modal-title').textContent = title;
+      document.getElementById('confirm-modal-text').textContent = text;
+      const okBtn = document.getElementById('confirm-modal-ok');
+      okBtn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+      };
+      const m = document.getElementById('confirm-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeConfirmModal() {
+      const m = document.getElementById('confirm-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function confirmDeleteItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      openConfirmModal(
+        'Supprimer la fiche',
+        `Voulez-vous vraiment supprimer « ${item.title} » de votre collection ?`,
+        () => {
+          items = items.filter(i => i.id !== id);
+          saveItems();
+          closeDetailModal();
+          switchTab(currentTab);
+          showToast('Fiche supprimée.');
+        }
+      );
+    }
+
+    function confirmResetDemoData() {
+      openConfirmModal(
+        'Réinitialiser les données',
+        'Remplacer toute la collection actuelle par les données d’exemple MyCollection V3 ?',
+        () => {
+          items = cloneDefaultItems();
+          saveItems();
+          closeDataModal();
+          switchTab(currentTab);
+          showToast('Données d’exemple restaurées.');
+        }
+      );
+    }
+
+    /* =========================================================================
+       SCANNER CODE-BARRES (CAMÉRA + SAISIE MANUELLE)
+       ========================================================================= */
+    function openBarcodeModal() {
+      document.getElementById('barcode-status-msg').textContent = '';
+      const m = document.getElementById('barcode-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeBarcodeModal() {
+      stopBarcodeCamera();
+      const m = document.getElementById('barcode-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function startBarcodeCamera() {
+      const video = document.getElementById('barcode-video');
+      const placeholder = document.getElementById('barcode-placeholder');
+      const msg = document.getElementById('barcode-status-msg');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        msg.textContent = 'Caméra indisponible sur cet appareil ; saisissez le code manuellement.';
+        return;
+      }
+      try {
+        barcodeStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = barcodeStream;
+        video.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        await video.play();
+
+        if ('BarcodeDetector' in window) {
+          const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+          msg.textContent = 'Caméra active — visez le code-barres...';
+          const loop = async () => {
+            if (!barcodeStream) return;
+            try {
+              const codes = await det.detect(video);
+              if (codes && codes.length) {
+                document.getElementById('barcode-manual-input').value = codes[0].rawValue;
+                stopBarcodeCamera();
+                lookupBarcodeValue();
+                return;
+              }
+            } catch (_) {}
+            barcodeScanFrame = requestAnimationFrame(loop);
+          };
+          barcodeScanFrame = requestAnimationFrame(loop);
+        } else {
+          msg.textContent = 'Caméra active : saisissez le code lu ci-dessus.';
+        }
+      } catch (_) {
+        msg.textContent = 'Accès caméra refusé ; utilisez le champ de saisie manuelle.';
+      }
+    }
+
+    function stopBarcodeCamera() {
+      if (barcodeScanFrame) cancelAnimationFrame(barcodeScanFrame);
+      barcodeScanFrame = null;
+      if (barcodeStream) {
+        barcodeStream.getTracks().forEach(t => t.stop());
+        barcodeStream = null;
+      }
+      const v = document.getElementById('barcode-video');
+      const p = document.getElementById('barcode-placeholder');
+      if (v) { v.pause(); v.srcObject = null; v.classList.add('hidden'); }
+      if (p) p.classList.remove('hidden');
+    }
+
+    async function lookupBarcodeValue() {
+      const code = (document.getElementById('barcode-manual-input').value || '').trim();
+      const msg = document.getElementById('barcode-status-msg');
+      if (!code) return;
+
+      const found = items.find(i => i.barcode && i.barcode.trim() === code);
+      if (found) {
+        closeBarcodeModal();
+        openDetailModal(found.id);
+        showToast(`Déjà dans votre collection : ${found.title}`);
+        return;
+      }
+
+      const isIsbn = code.startsWith('978') || code.startsWith('979');
+      if (isIsbn) {
+        msg.textContent = 'Recherche ISBN sur OpenLibrary...';
+        try {
+          const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${encodeURIComponent(code)}&format=json&jscmd=data`);
+          const data = await res.json();
+          const book = data[`ISBN:${code}`];
+          closeBarcodeModal();
+          openFormModal('livres');
+          document.getElementById('field-barcode').value = code;
+          if (book) {
+            document.getElementById('field-title').value = book.title || '';
+            if (book.authors && book.authors[0]) document.getElementById('field-creator').value = book.authors[0].name || '';
+            if (book.number_of_pages) document.getElementById('field-metric').value = book.number_of_pages;
+            if (book.publish_date) {
+              const m = String(book.publish_date).match(/\d{4}/);
+              if (m) document.getElementById('field-year').value = parseInt(m[0], 10);
+            }
+            if (book.cover && book.cover.large) document.getElementById('field-poster').value = book.cover.large;
+            showToast(`Livre trouvé : ${book.title}`);
+          } else {
+            showToast(`Code ISBN ${code} prêt à enregistrer.`);
+          }
+          return;
+        } catch (_) {}
+      }
+
+      closeBarcodeModal();
+      const targetCat = ['films', 'series', 'bd', 'livres'].includes(currentTab) ? currentTab : 'films';
+      openFormModal(targetCat);
+      document.getElementById('field-barcode').value = code;
+      showToast(`Code-barres ${code} prérempli.`);
+    }
+
+    /* =========================================================================
+       EXPORT / IMPORT JSON
+       ========================================================================= */
+    function openDataModal() {
+      const m = document.getElementById('data-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeDataModal() {
+      const m = document.getElementById('data-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mycollection-v3-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Sauvegarde JSON téléchargée.');
+    }
+
+    function importJSON(e, mode = 'replace') {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (Array.isArray(data)) {
+            const normalized = data.map(normalizeItem);
+            if (mode === 'merge') {
+              const existingIds = new Set(items.map(i => i.id));
+              const added = normalized.filter(i => !existingIds.has(i.id));
+              items = [...added, ...items];
+              showToast(`${added.length} nouvelle(s) fiche(s) fusionnée(s).`);
+            } else {
+              items = normalized;
+              showToast('Collection importée.');
+            }
+            saveItems();
+            closeDataModal();
+            switchTab(currentTab);
+          }
+        } catch (_) {
+          showToast('Fichier JSON invalide.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
