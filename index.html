@@ -1212,7 +1212,7 @@
         filterBar = `
           <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#081749]/90 p-3.5 rounded-2xl border border-[#facc15]/25">
             <div class="md:col-span-5">
-              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'films')" placeholder="Rechercher un film, réalisateur, acteur, saga..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D2B78] border border-blue-400/30 text-white placeholder-blue-300/60 text-sm focus:outline-none focus:border-[#facc15]" />
+              <input type="text" value="${escapeHtml(filterState.search)}" onchange="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'films')" placeholder="Rechercher un film, réalisateur, acteur, saga..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D2B78] border border-blue-400/30 text-white placeholder-blue-300/60 text-sm focus:outline-none focus:border-[#facc15]" />
             </div>
             <div class="md:col-span-4">
               <select onchange="filterState.filmSort=this.value;renderUniverseView(document.getElementById('main-container'),'films')" class="w-full px-3.5 py-2.5 rounded-xl bg-[#0D2B78] border border-blue-400/30 text-amber-200 text-sm font-medium focus:outline-none">
@@ -1241,7 +1241,7 @@
         filterBar = `
           <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#2a211c] p-3.5 rounded-2xl border border-amber-700/35">
             <div class="md:col-span-7">
-              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'series')" placeholder="Rechercher une série, créateur..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#1D1815] border border-amber-700/40 text-amber-50 placeholder-amber-200/40 text-sm focus:outline-none" />
+              <input type="text" value="${escapeHtml(filterState.search)}" onchange="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'series')" placeholder="Rechercher une série, créateur..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#1D1815] border border-amber-700/40 text-amber-50 placeholder-amber-200/40 text-sm focus:outline-none" />
             </div>
             <div class="md:col-span-5 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel, true)}</div>
           </div>
@@ -1261,7 +1261,7 @@
         filterBar = `
           <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-[#faf6ee] p-3.5 rounded-2xl border border-[#D8C9B4]">
             <div class="md:col-span-7">
-              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'livres')" placeholder="Rechercher un livre, auteur, édition..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#f6f1e7] border border-[#D6C7B2] text-[#261C15] placeholder-[#8A7560] text-sm focus:outline-none" />
+              <input type="text" value="${escapeHtml(filterState.search)}" onchange="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'livres')" placeholder="Rechercher un livre, auteur, édition..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#f6f1e7] border border-[#D6C7B2] text-[#261C15] placeholder-[#8A7560] text-sm focus:outline-none" />
             </div>
             <div class="md:col-span-5 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel, true)}</div>
           </div>
@@ -1283,7 +1283,7 @@
         filterBar = `
           <div class="ligne-claire-card grid grid-cols-1 md:grid-cols-12 gap-3 bg-white p-3.5 rounded-2xl">
             <div class="md:col-span-8">
-              <input type="text" value="${escapeHtml(filterState.search)}" oninput="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'bd')" placeholder="Rechercher une BD, série, auteur..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border-2 border-[#18181b] text-[#18181b] text-sm font-medium focus:outline-none" />
+              <input type="text" value="${escapeHtml(filterState.search)}" onchange="filterState.search=this.value;renderUniverseView(document.getElementById('main-container'),'bd')" placeholder="Rechercher une BD, série, auteur..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border-2 border-[#18181b] text-[#18181b] text-sm font-medium focus:outline-none" />
             </div>
             <div class="md:col-span-4 flex gap-1.5">${renderStatusPills(category, doneLabel, todoLabel)}</div>
           </div>
